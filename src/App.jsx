@@ -12,7 +12,7 @@ import PartnersSection from './components/brands';
 import Features from './components/features';
 import Feedback from './components/feedback';
 import BestSellers from './components/sellers';
-import FeaturedCategories from './components/categories';
+// import FeaturedCategories from './components/categories';
 
 
 
