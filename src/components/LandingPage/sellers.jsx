@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Star, StarHalf, ShoppingCart, Heart } from 'lucide-react';
+import axios from 'axios';
 
 const ProductCard = ({ product }) => {
   const renderStars = (rating) => {
@@ -83,48 +84,24 @@ const ProductCard = ({ product }) => {
 };
 
 const BestSellers = () => {
-  const products = [
-    {
-      name: 'Premium Yoga Mat',
-      rating: 4.5,
-      price: '79.99',
-      originalPrice: '99.99',
-      stock: 'In Stock',
-      badge: '-20%',
-      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1000&auto=format&fit=crop',
-    },
-    {
-      name: 'Smart Fitness Watch',
-      rating: 5.0,
-      price: '149.99',
-      stock: 'In Stock',
-      badge: 'New',
-      image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?q=80&w=1000&auto=format&fit=crop',
-    },
-    {
-      name: 'Pro Basketball',
-      rating: 4.0,
-      price: '29.99',
-      stock: 'In Stock',
-      badge: 'Hot',
-      image: 'https://images.unsplash.com/photo-1519861155730-0b5fbf0dd889?q=80&w=1000&auto=format&fit=crop',
-    },
-    {
-      name: 'Training Dumbbells Set',
-      rating: 4.5,
-      price: '89.99',
-      stock: 'Low Stock',
-      image:
-        'https://images.pexels.com/photos/5580069/pexels-photo-5580069.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    },
-  ];
+  const [data,Setdata] = useState()
+  useEffect(() => {
+    const fetch = async()=> {
+      const res = await axios.get("http://localhost:5000/fetchproduct")
+      Setdata(res.data.data)
+      console.log(res)
+    }
+    fetch();
+ }, [])
+  
+
 
   return (
     <div className="container text-center py-5">
       <h1 className="display-5 fw-bold mb-3">Best Sellers</h1>
       <p className="text-muted mb-4">Our most popular products loved by athletes</p>
       <div className="row g-4 justify-content-center">
-        {products.map((product, index) => (
+        {data?.map((product, index) => (
           <div key={index} className="col-12 col-sm-6 col-md-4 col-lg-3">
             <ProductCard product={product} />
           </div>

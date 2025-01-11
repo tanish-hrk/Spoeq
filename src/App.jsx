@@ -1,37 +1,26 @@
-// App.js
-import './App.css'; // Ensure the path and file exist
-import React from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import '@fortawesome/fontawesome-free/css/all.min.css';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import Home from './components/Home';
-import Contact from './components/Contact';
-import Subscribe from './components/Subscribe';
-import PartnersSection from './components/brands';
-import Features from './components/features';
-import Feedback from './components/feedback';
-import BestSellers from './components/sellers';
-import FeaturedCategories from './components/categories';
-
-
-
-
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import "./App.css";
+import "@fortawesome/fontawesome-free/css/all.min.css";
+import LandingPage from "./components/LandingPage";
+import FitnessCate from "./components/CategoryPage/FitnessCate";
+import RunningCategory from "./components/CategoryPage/RunningCate";
+import TeamSportCategory from "./components/CategoryPage/TeamSportCate";
+import TrainingCate from "./components/CategoryPage/TrainingCate";
 
 function App() {
   return (
-    <div className="App">
-      <Header />
-      <Home />
-      <FeaturedCategories />
-      <Features />
-      <BestSellers />
-      <PartnersSection />
-      <Feedback />
-      <Subscribe />
-      <Contact />
-      <Footer />
-    </div>
+    <Router>
+      <div className="App">
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/fitnessCate" element={<FitnessCate />} />
+          <Route path="/runningCate" element={<RunningCategory />} />
+          <Route path="/teamSportsCate" element={<TeamSportCategory />} />
+          <Route path="/trainingCate" element={<TrainingCate />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

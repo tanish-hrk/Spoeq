@@ -1,7 +1,16 @@
-import React from "react";
-import babyImage from "../assets/photo-1522778526097-ce0a22ceb253.avif";
+import React, { useEffect } from "react";
+import babyImage from "../../assets/photo-1522778526097-ce0a22ceb253.avif";
+import axios from 'axios';
 
 const Home = () => {
+
+  useEffect(() => {
+     const fetch = async()=> {
+       const res = await axios.get("http://localhost:5000/api")
+       console.log(res)
+     }
+     fetch();
+  }, [])
   const heroStyle = {
     backgroundImage: `url(${babyImage})`,
     backgroundSize: 'cover',
