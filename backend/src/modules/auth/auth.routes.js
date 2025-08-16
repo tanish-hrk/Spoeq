@@ -4,6 +4,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('./auth.model');
 const router = express.Router();
+const { auth } = require('../../middleware/auth');
+const User = require('./auth.model');
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -69,6 +71,63 @@ router.post('/refresh', async (req,res,next)=>{
 router.post('/logout', (req,res)=>{
   // Stateless JWT: client just drops tokens. Optionally maintain denylist.
   res.json({ message: 'Logged out' });
+});
+
+// Profile (basic)
+router.get('/me', auth(true), async (req,res,next)=>{
+  try {
+    const user = await User.findById(req.user.id).lean();
+    if(!user) return res.status(404).json({ error: 'Not found' });
+    res.json({ id: user._id, email: user.email, name: user.name, roles: user.roles, addresses: user.addresses });
+  } catch(err){ next(err); }
+});
+
+const addressSchema = z.object({
+  line1: z.string(),
+  line2: z.string().optional(),
+  city: z.string(),
+  state: z.string(),
+  country: z.string(),
+  zip: z.string(),
+  isDefault: z.boolean().optional()
+});
+
+router.post('/me/addresses', auth(true), async (req,res,next)=>{
+  try {
+    const body = addressSchema.parse(req.body);
+    const user = await User.findById(req.user.id);
+    if(!user) return res.status(404).json({ error: 'Not found' });
+    if(body.isDefault) user.addresses.forEach(a=> a.isDefault = false);
+    user.addresses.push(body);
+    await user.save();
+    res.status(201).json(user.addresses);
+  } catch(err){ next(err); }
+});
+
+router.patch('/me/addresses/:idx', auth(true), async (req,res,next)=>{
+  try {
+    const body = addressSchema.partial().parse(req.body);
+    const user = await User.findById(req.user.id);
+    if(!user) return res.status(404).json({ error: 'Not found' });
+    const idx = parseInt(req.params.idx,10);
+    if (idx < 0 || idx >= user.addresses.length) return res.status(404).json({ error: 'Address not found' });
+    if(body.isDefault) user.addresses.forEach(a=> a.isDefault = false);
+    Object.assign(user.addresses[idx], body);
+    await user.save();
+    res.json(user.addresses);
+  } catch(err){ next(err); }
+});
+
+router.delete('/me/addresses/:idx', auth(true), async (req,res,next)=>{
+  try {
+    const user = await User.findById(req.user.id);
+    if(!user) return res.status(404).json({ error: 'Not found' });
+    const idx = parseInt(req.params.idx,10);
+    if (idx < 0 || idx >= user.addresses.length) return res.status(404).json({ error: 'Address not found' });
+    user.addresses.splice(idx,1);
+    await user.save();
+    res.json(user.addresses);
+  } catch(err){ next(err); }
 });
 
 module.exports = router;

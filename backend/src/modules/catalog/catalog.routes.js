@@ -29,16 +29,19 @@ router.get('/', async (req,res,next)=>{
       if (q.minPrice) filter['price.sale'].$gte = Number(q.minPrice);
       if (q.maxPrice) filter['price.sale'].$lte = Number(q.maxPrice);
     }
-    let cursor = Product.find(filter);
-    if (q.sort) {
+    let findQuery = Product.find(filter);
+    if (q.search) {
+      // ensure score projection when using text search
+      findQuery = findQuery.select({ score: { $meta: 'textScore' } }).sort({ score: { $meta: 'textScore' } });
+    } else if (q.sort) {
       const sortFields = q.sort.split(',').join(' ');
-      cursor = cursor.sort(sortFields);
+      findQuery = findQuery.sort(sortFields);
     } else {
-      cursor = cursor.sort('-createdAt');
+      findQuery = findQuery.sort('-createdAt');
     }
     const total = await Product.countDocuments(filter);
-    const items = await cursor.skip((page-1)*limit).limit(limit).lean();
-    res.json({ page, limit, total, items });
+    const items = await findQuery.skip((page-1)*limit).limit(limit).lean();
+    res.json({ page, limit, total, items, totalPages: Math.ceil(total/limit) });
   } catch(err){ next(err); }
 });
 
@@ -71,6 +74,28 @@ router.get('/:id', async (req,res,next)=>{
     const product = await Product.findById(req.params.id).lean();
     if (!product) return res.status(404).json({ error: 'Not found' });
     res.json(product);
+  } catch(err){ next(err); }
+});
+
+const updateSchema = createSchema.partial();
+router.patch('/:id', auth(true), requireRoles('admin'), async (req,res,next)=>{
+  try {
+    const body = updateSchema.parse(req.body);
+    if (body.slug) {
+      const exists = await Product.findOne({ slug: body.slug, _id: { $ne: req.params.id } });
+      if (exists) return res.status(409).json({ error: 'Slug already exists' });
+    }
+    const updated = await Product.findByIdAndUpdate(req.params.id, body, { new: true });
+    if(!updated) return res.status(404).json({ error: 'Not found' });
+    res.json(updated);
+  } catch(err){ next(err); }
+});
+
+router.delete('/:id', auth(true), requireRoles('admin'), async (req,res,next)=>{
+  try {
+    const deleted = await Product.findByIdAndDelete(req.params.id);
+    if(!deleted) return res.status(404).json({ error: 'Not found' });
+    res.json({ message: 'Deleted' });
   } catch(err){ next(err); }
 });
 

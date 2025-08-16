@@ -14,6 +14,9 @@ const mongoose = require('mongoose');
 const productRouter = require('./src/api/product');
 const authRouter = require('./src/modules/auth/auth.routes');
 const catalogRouter = require('./src/modules/catalog/catalog.routes');
+const cartRouter = require('./src/modules/cart/cart.routes');
+const orderRouter = require('./src/modules/order/order.routes');
+const reviewRouter = require('./src/modules/review/review.routes');
 const { errorHandler } = require('./src/middleware/error');
 
 const app = express();
@@ -49,6 +52,9 @@ app.use('/fetchproduct', productRouter);
 // Domain routes
 app.use('/auth', authRouter);
 app.use('/products', catalogRouter);
+app.use('/cart', cartRouter);
+app.use('/orders', orderRouter);
+app.use('/reviews', reviewRouter);
 
 // Error handling
 // 404

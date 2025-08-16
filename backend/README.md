@@ -34,6 +34,25 @@ ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=StrongPass123 npm run seed:admin
 - GET /products
 - POST /products (admin)
 - GET /products/:id
+- PATCH /products/:id (admin)
+- DELETE /products/:id (admin)
+- GET /cart
+- POST /cart
+- PATCH /cart/:productId
+- DELETE /cart/:productId
+- POST /cart/apply-coupon
+- POST /orders (create draft from cart)
+- GET /orders
+- GET /orders/:id
+- POST /orders/:id/create-payment-intent (create Razorpay order)
+- POST /orders/verify (verify signature & capture)
+- GET /reviews/product/:productId
+- POST /reviews (requires purchase)
+- PATCH /reviews/:id/status (admin)
+- GET /auth/me
+- POST /auth/me/addresses
+- PATCH /auth/me/addresses/:idx
+- DELETE /auth/me/addresses/:idx
 
 ### Docker (Prod-ish)
 ```
