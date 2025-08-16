@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button, Container, Row, Col } from 'react-bootstrap';
+import { Card, Button } from 'react-bootstrap';
 import { Star, StarFill, Heart } from 'react-bootstrap-icons';
 
 const ProductCard = ({ product }) => {
@@ -47,3 +47,5 @@ const ProductCard = ({ product }) => {
     </Card>
   );
 };
+
+export default ProductCard;

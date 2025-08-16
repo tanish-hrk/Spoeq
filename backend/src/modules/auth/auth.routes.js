@@ -1,0 +1,74 @@
+const express = require('express');
+const { z } = require('zod');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require('./auth.model');
+const router = express.Router();
+
+const registerSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  name: z.string().min(1)
+});
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6)
+});
+
+const refreshSchema = z.object({
+  refreshToken: z.string().min(10)
+});
+
+function signTokens(user){
+  const access = jwt.sign({ sub: user._id, roles: user.roles }, process.env.JWT_ACCESS_SECRET, { expiresIn: process.env.ACCESS_TOKEN_TTL || '15m' });
+  const refresh = jwt.sign({ sub: user._id }, process.env.JWT_REFRESH_SECRET, { expiresIn: process.env.REFRESH_TOKEN_TTL || '7d' });
+  return { access, refresh };
+}
+
+router.post('/register', async (req,res,next)=>{
+  try {
+    const body = registerSchema.parse(req.body);
+    const exists = await User.findOne({ email: body.email });
+    if (exists) return res.status(409).json({ error: 'Email already registered' });
+    const hash = await bcrypt.hash(body.password, 12);
+    const user = await User.create({ email: body.email, passwordHash: hash, name: body.name });
+    const tokens = signTokens(user);
+    res.status(201).json({ user: { id: user._id, email: user.email, name: user.name, roles: user.roles }, tokens });
+  } catch(err){ next(err); }
+});
+
+router.post('/login', async (req,res,next)=>{
+  try {
+    const body = loginSchema.parse(req.body);
+    const user = await User.findOne({ email: body.email });
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    const match = await bcrypt.compare(body.password, user.passwordHash);
+    if (!match) return res.status(401).json({ error: 'Invalid credentials' });
+    if (user.status === 'blocked') return res.status(403).json({ error: 'Account blocked' });
+    const tokens = signTokens(user);
+    res.json({ user: { id: user._id, email: user.email, name: user.name, roles: user.roles }, tokens });
+  } catch(err){ next(err); }
+});
+
+router.post('/refresh', async (req,res,next)=>{
+  try {
+    const body = refreshSchema.parse(req.body);
+    try {
+      const payload = jwt.verify(body.refreshToken, process.env.JWT_REFRESH_SECRET);
+      const user = await User.findById(payload.sub);
+      if(!user) return res.status(401).json({ error: 'Invalid token' });
+      const tokens = signTokens(user);
+      res.json({ tokens });
+    } catch(err){
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+  } catch(err){ next(err); }
+});
+
+router.post('/logout', (req,res)=>{
+  // Stateless JWT: client just drops tokens. Optionally maintain denylist.
+  res.json({ message: 'Logged out' });
+});
+
+module.exports = router;

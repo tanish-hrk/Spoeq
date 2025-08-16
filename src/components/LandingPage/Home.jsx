@@ -6,11 +6,15 @@ const Home = () => {
 
   useEffect(() => {
      const fetch = async()=> {
-       const res = await axios.get("http://localhost:5000/api")
-       console.log(res)
-     }
+       try {
+         const res = await axios.get(import.meta.env.VITE_API_BASE + "/api");
+         console.log(res.data);
+       } catch (err) {
+         console.error('API /api error', err.message);
+       }
+     };
      fetch();
-  }, [])
+  }, []);
   const heroStyle = {
     backgroundImage: `url(${babyImage})`,
     backgroundSize: 'cover',

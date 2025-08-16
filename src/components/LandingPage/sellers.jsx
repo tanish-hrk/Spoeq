@@ -84,15 +84,22 @@ const ProductCard = ({ product }) => {
 };
 
 const BestSellers = () => {
-  const [data,Setdata] = useState()
+  const [data,Setdata] = useState();
+  const [error,setError] = useState(null);
+  const [loading,setLoading] = useState(true);
   useEffect(() => {
     const fetch = async()=> {
-      const res = await axios.get("http://localhost:5000/fetchproduct")
-      Setdata(res.data.data)
-      console.log(res)
-    }
+      try {
+        const res = await axios.get((import.meta.env.VITE_API_BASE || 'http://localhost:5000')+"/fetchproduct");
+        Setdata(res.data.data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetch();
- }, [])
+ }, []);
   
 
 
@@ -100,7 +107,9 @@ const BestSellers = () => {
     <div className="container text-center py-5">
       <h1 className="display-5 fw-bold mb-3">Best Sellers</h1>
       <p className="text-muted mb-4">Our most popular products loved by athletes</p>
-      <div className="row g-4 justify-content-center">
+  {loading && <p>Loading...</p>}
+  {error && <p className="text-danger">{error}</p>}
+  <div className="row g-4 justify-content-center">
         {data?.map((product, index) => (
           <div key={index} className="col-12 col-sm-6 col-md-4 col-lg-3">
             <ProductCard product={product} />

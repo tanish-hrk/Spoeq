@@ -2,15 +2,31 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "start in react backend",
-  "main": "main.jsx",
+  "main": "main.js",
   "scripts": {
-    "start": "nodemon main.js"
+    "dev": "nodemon main.js",
+    "start": "node main.js",
+  "seed": "node src/scripts/seedProducts.js",
+  "seed:admin": "node src/scripts/seedAdmin.js",
+  "lint": "echo 'No linter configured'",
+  "test": "echo 'Tests TBD' && exit 0"
   },
   "author": "TANISH HRK",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^4.21.2",
-    "nodemon": "^3.1.9"
+    "express-rate-limit": "^7.2.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.6.0",
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.9",
+  "winston": "^3.13.0",
+    "zod": "^3.23.8"
   }
 }

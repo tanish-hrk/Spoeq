@@ -4,5 +4,43 @@ This template provides a minimal setup to get React working in Vite with HMR and
 
 Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+# SPOEQ
+
+Sports equipment storefront built with React + Vite (frontend) and Express (backend).
+
+## Run Dev
+
+1. Backend
+```
+cd backend
+npm install
+npm start
+```
+2. Frontend (new terminal)
+```
+npm install
+npm run dev
+```
+
+Backend runs on :5000, frontend on :3000. API base URL configurable via `.env` key `VITE_API_BASE`.
+
+## Build Frontend
+```
+npm run build
+```
+Then serve `dist/` from backend (already configured in `backend/main.js`).
+
+## Environment
+Create `.env` at project root:
+```
+VITE_API_BASE=http://localhost:5000
+```
+
+## Lint
+```
+npm run lint
+```
+
+## Notes
+- Tailwind configured; currently Bootstrap handles most styling.
+- Product data is mock; extend `backend/src/api/product.js` for real data.
