@@ -112,29 +112,48 @@ router.post('/verify', auth(true), async (req,res,next)=>{
       .digest('hex');
     if(generatedSignature !== razorpay_signature) return res.status(400).json({ error: 'Invalid signature' });
     // Atomic inventory decrement
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    let usedTransaction = false;
+    let session;
     try {
+      session = await mongoose.startSession();
+      session.startTransaction();
+      usedTransaction = true;
       for (const item of order.items) {
         const resUpdate = await Product.updateOne({ _id: item.productId, stock: { $gte: item.qty } }, { $inc: { stock: -item.qty } }).session(session);
         if(resUpdate.modifiedCount === 0) throw new Error('Insufficient stock');
       }
       order.status = 'paid';
-  order.payment.status = 'paid';
-  order.payment.signature = razorpay_signature;
-  order.payment.paymentId = razorpay_payment_id;
-      // increment coupon usage if applied
+      order.payment.status = 'paid';
+      order.payment.signature = razorpay_signature;
+      order.payment.paymentId = razorpay_payment_id;
       if(order.couponCode){
         const Coupon = require('../coupon/coupon.model');
-        await Coupon.updateOne({ code: order.couponCode }, { $inc: { usageCount: 1 } });
+        await Coupon.updateOne({ code: order.couponCode }, { $inc: { usageCount: 1 } }).session(session);
       }
       await order.save({ session });
       await session.commitTransaction();
-      res.json({ success: true, orderId: order._id });
+      return res.json({ success: true, orderId: order._id, transactional: true });
     } catch(e){
-      await session.abortTransaction();
+      if(usedTransaction) { try { await session.abortTransaction(); } catch(_){} }
+      // Fallback non-transactional for standalone Mongo (e.g., memory server)
+      if(e.message && e.message.includes('Transaction numbers are only allowed')) {
+        for (const item of order.items) {
+          const resUpdate = await Product.updateOne({ _id: item.productId, stock: { $gte: item.qty } }, { $inc: { stock: -item.qty } });
+          if(resUpdate.modifiedCount === 0) return res.status(400).json({ error: 'Insufficient stock' });
+        }
+        order.status = 'paid';
+        order.payment.status = 'paid';
+        order.payment.signature = razorpay_signature;
+        order.payment.paymentId = razorpay_payment_id;
+        if(order.couponCode){
+          const Coupon = require('../coupon/coupon.model');
+          await Coupon.updateOne({ code: order.couponCode }, { $inc: { usageCount: 1 } });
+        }
+        await order.save();
+        return res.json({ success: true, orderId: order._id, transactional: false });
+      }
       return res.status(400).json({ error: e.message });
-    } finally { session.endSession(); }
+    } finally { if(session) session.endSession(); }
   } catch(err){ next(err); }
 });
 

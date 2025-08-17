@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const User = require('./auth.model');
 const router = express.Router();
 const { auth } = require('../../middleware/auth');
-const User = require('./auth.model');
 
 const registerSchema = z.object({
   email: z.string().email(),
