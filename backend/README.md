@@ -46,9 +46,15 @@ ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=StrongPass123 npm run seed:admin
 - GET /orders/:id
 - POST /orders/:id/create-payment-intent (create Razorpay order)
 - POST /orders/verify (verify signature & capture)
+- POST /orders/webhook/razorpay (optional webhook endpoint)
 - GET /reviews/product/:productId
 - POST /reviews (requires purchase)
 - PATCH /reviews/:id/status (admin)
+- POST /coupons (admin)
+- GET /coupons (admin)
+- PATCH /coupons/:id (admin)
+- DELETE /coupons/:id (admin)
+- POST /coupons/validate
 - GET /auth/me
 - POST /auth/me/addresses
 - PATCH /auth/me/addresses/:idx

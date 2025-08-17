@@ -35,6 +35,27 @@ router.patch('/:id/status', auth(true), requireRoles('admin'), async (req,res,ne
     const { status } = modSchema.parse(req.body);
     const review = await Review.findByIdAndUpdate(req.params.id, { status }, { new: true });
     if(!review) return res.status(404).json({ error: 'Not found' });
+    // Update product rating aggregates
+    const Product = require('../catalog/catalog.model');
+    if(status === 'approved') {
+      // incrementally update
+      await Product.updateOne({ _id: review.productId }, [
+        { $set: {
+          ratingAvg: { $cond: [ { $gt: ['$ratingCount', 0] }, { $divide: [ { $add: [ { $multiply: ['$ratingAvg', '$ratingCount'] }, review.rating ] }, { $add: ['$ratingCount', 1] } ] }, review.rating ] },
+          ratingCount: { $add: ['$ratingCount', 1] }
+        } }
+      ]).catch(async ()=> {
+        // fallback: full recompute
+        const approved = await Review.find({ productId: review.productId, status: 'approved' });
+        const total = approved.reduce((a,r)=> a + r.rating, 0);
+        await Product.updateOne({ _id: review.productId }, { ratingAvg: approved.length? total/approved.length:0, ratingCount: approved.length });
+      });
+    } else if(status === 'rejected') {
+      // recompute fully since removing one rating
+      const approved = await Review.find({ productId: review.productId, status: 'approved' });
+      const total = approved.reduce((a,r)=> a + r.rating, 0);
+      await Product.updateOne({ _id: review.productId }, { ratingAvg: approved.length? total/approved.length:0, ratingCount: approved.length });
+    }
     res.json(review);
   } catch(err){ next(err); }
 });

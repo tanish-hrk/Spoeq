@@ -28,6 +28,7 @@ const orderSchema = new mongoose.Schema({
   currency: String,
   amount: Number,
   receipt: String,
+  paymentId: String,
   signature: String // verification signature after payment success
   },
   shippingAddressSnapshot: {},

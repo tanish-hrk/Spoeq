@@ -17,6 +17,7 @@ const catalogRouter = require('./src/modules/catalog/catalog.routes');
 const cartRouter = require('./src/modules/cart/cart.routes');
 const orderRouter = require('./src/modules/order/order.routes');
 const reviewRouter = require('./src/modules/review/review.routes');
+const couponRouter = require('./src/modules/coupon/coupon.routes');
 const { errorHandler } = require('./src/middleware/error');
 
 const app = express();
@@ -55,6 +56,7 @@ app.use('/products', catalogRouter);
 app.use('/cart', cartRouter);
 app.use('/orders', orderRouter);
 app.use('/reviews', reviewRouter);
+app.use('/coupons', couponRouter);
 
 // Error handling
 // 404

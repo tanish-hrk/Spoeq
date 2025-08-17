@@ -58,12 +58,26 @@ const couponSchema = z.object({ code: z.string() });
 router.post('/apply-coupon', auth(true), async (req,res,next)=>{
   try {
     const { code } = couponSchema.parse(req.body);
-    // Placeholder: real coupon validation later
     let cart = await Cart.findOne({ userId: req.user.id });
     if(!cart) return res.status(404).json({ error: 'Cart empty' });
-    cart.couponCode = code;
+    // compute subtotal
+    const ids = cart.items.map(i => i.productId);
+    const products = await Product.find({ _id: { $in: ids } }).lean();
+    const map = {}; products.forEach(p=> map[p._id.toString()] = p);
+    let subtotal = 0;
+    cart.items.forEach(i => { const p = map[i.productId.toString()]; const price = p?.price?.sale || 0; subtotal += price * i.qty; });
+    const Coupon = require('../coupon/coupon.model');
+    const coupon = await Coupon.findOne({ code: code.toUpperCase() });
+    if(!coupon) return res.status(404).json({ error: 'Invalid coupon' });
+    const now = new Date();
+    if(!coupon.active || (coupon.startsAt && coupon.startsAt > now) || (coupon.endsAt && coupon.endsAt < now) || (coupon.usageLimit && coupon.usageCount >= coupon.usageLimit) || subtotal < (coupon.minSubtotal||0)) {
+      return res.status(400).json({ error: 'Coupon not applicable' });
+    }
+    cart.couponCode = coupon.code;
     await cart.save();
-    res.json({ message: 'Coupon applied', cart });
+    let discount = coupon.discountType === 'percent' ? subtotal * (coupon.value/100) : coupon.value;
+    discount = Math.min(discount, subtotal);
+    res.json({ message: 'Coupon applied', cart, discount, subtotal, grandTotal: subtotal - discount });
   } catch(err){ next(err); }
 });
 

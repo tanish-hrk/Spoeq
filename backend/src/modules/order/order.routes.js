@@ -26,7 +26,25 @@ router.post('/', auth(true), async (req,res,next)=>{
       return line;
     });
     const pricing = { subtotal, discountTotal: 0, tax: 0, shipping: 0, grandTotal: subtotal };
-  const order = await Order.create({ userId: req.user.id, items, pricing, status: 'pending' });
+    // apply coupon if exists on cart
+    let couponCode = cart.couponCode;
+    if (couponCode) {
+      const Coupon = require('../coupon/coupon.model');
+      const coupon = await Coupon.findOne({ code: couponCode });
+      if (coupon) {
+        const now = new Date();
+        const applicable = coupon.active && (!coupon.startsAt || coupon.startsAt <= now) && (!coupon.endsAt || coupon.endsAt >= now) && (!coupon.usageLimit || coupon.usageCount < coupon.usageLimit) && subtotal >= (coupon.minSubtotal||0);
+        if(applicable){
+          let discount = coupon.discountType === 'percent' ? subtotal * (coupon.value/100) : coupon.value;
+          discount = Math.min(discount, subtotal);
+          pricing.discountTotal = discount;
+          pricing.grandTotal = subtotal - discount;
+        } else {
+          couponCode = undefined; // ignore invalid
+        }
+      } else { couponCode = undefined; }
+    }
+  const order = await Order.create({ userId: req.user.id, items, pricing, status: 'pending', couponCode });
     res.status(201).json(order);
   } catch(err){ next(err); }
 });
@@ -102,8 +120,14 @@ router.post('/verify', auth(true), async (req,res,next)=>{
         if(resUpdate.modifiedCount === 0) throw new Error('Insufficient stock');
       }
       order.status = 'paid';
-      order.payment.status = 'paid';
-      order.payment.signature = razorpay_signature;
+  order.payment.status = 'paid';
+  order.payment.signature = razorpay_signature;
+  order.payment.paymentId = razorpay_payment_id;
+      // increment coupon usage if applied
+      if(order.couponCode){
+        const Coupon = require('../coupon/coupon.model');
+        await Coupon.updateOne({ code: order.couponCode }, { $inc: { usageCount: 1 } });
+      }
       await order.save({ session });
       await session.commitTransaction();
       res.json({ success: true, orderId: order._id });
@@ -111,6 +135,22 @@ router.post('/verify', auth(true), async (req,res,next)=>{
       await session.abortTransaction();
       return res.status(400).json({ error: e.message });
     } finally { session.endSession(); }
+  } catch(err){ next(err); }
+});
+
+// (Optional) Razorpay webhook endpoint for asynchronous events (e.g., refunds)
+router.post('/webhook/razorpay', express.raw({ type: 'application/json' }), async (req,res,next)=>{
+  try {
+    const signature = req.headers['x-razorpay-signature'];
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if(!secret) return res.status(501).json({ error: 'Webhook secret not configured' });
+    const crypto = require('crypto');
+    const expected = crypto.createHmac('sha256', secret).update(req.body).digest('hex');
+    if(expected !== signature) return res.status(400).json({ error: 'Invalid signature' });
+    const event = JSON.parse(req.body.toString());
+    // Handle limited set of events
+    if(event.event === 'payment.refunded'){ /* TODO: mark refund in order history */ }
+    res.json({ received: true });
   } catch(err){ next(err); }
 });
 
