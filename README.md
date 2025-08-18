@@ -248,21 +248,17 @@ Future: CDN for images, HTTP caching headers, Redis cluster, background pre‑wa
 
 ---
 
-## 🧭 Roadmap (Phase Timeline)
-Status legend: ✅ completed • 🚧 in progress • 🗓 planned
+## 🧭 Roadmap
+Phase 0: Backend foundation (auth, catalog, cart, basic orders, logging, error handling, seeding, Docker scaffold)
+Phase 1: Payments & commerce depth (Razorpay, coupons, reviews, inventory decrement, extended order model)
+Phase 2: Performance & hardening (cache layer + invalidation, rate limiting, notification stub, E2E tests, refresh rotation groundwork)
+Phase 3: Frontend modernization (Tailwind neon/glass UI, React Query, Zustand, product & cart flows, wishlist, reviews, coupons, filters, skeletons, toasts)
+Phase 4: Advanced UX & Admin (facets & suggestions, wishlist batching, addresses, order timeline & cancel, admin dashboard & product create, hashed refresh tokens, audit sampling, metrics)
+Phase 5: Deployment & Ops (Docker multi-stage, CI/CD, Prometheus metrics, readiness/shutdown, CSP tightening, log aggregation, env hardening)
+Phase 6: Intelligence & Engagement (recommendations, analytics dashboards, notifications, refund webhook handling, segmentation)
+Phase 7: Scale & Expansion (multi-tenant/marketplace, i18n, multi-currency & tax, image CDN, granular permissions, optional SaaS billing)
 
-| Phase | Status | Focus |
-|-------|--------|-------|
-| 0 | ✅ | Backend foundation: Auth (JWT), products catalog, cart, basic orders, logging, error handling, seeding, Docker scaffold. |
-| 1 | ✅ | Payments & commerce depth: Razorpay intent + verification, coupons, reviews w/ moderation hooks, inventory decrement, extended order model. |
-| 2 | ✅ | Performance & hardening: Redis/in-memory cache abstraction, product + review cache invalidation, rate limiting, notification emitter stub, E2E Jest flows, refresh token rotation groundwork. |
-| 3 | ✅ | Frontend modernization: Gen‑Z UI (Tailwind neon/glass), React Query, Zustand stores, product list/detail, cart & checkout scaffold, wishlist, reviews UI, coupons, filters, skeleton loaders, toasts, unified buttons. |
-| 4 | ✅ | Advanced UX & Admin: Faceted search, suggestions, wishlist batching, account addresses, order timeline & cancel, admin dashboard (orders + actions), product create, hashed refresh tokens, audit sampling, metrics. |
-| 5 | 🗓 | Deployment & Ops: Multi‑stage Docker images, CI/CD workflow, Prometheus-style metrics, readiness probe, graceful shutdown, CSP tightening, log aggregation, env hardening. |
-| 6 | 🗓 | Intelligence & Engagement: Recommendation engine (collaborative + trending), analytics dashboards (sales funnel, cohort retention), email/push notification service, refund webhook handling, customer segmentation. |
-| 7 | 🗓 | Scale & Expansion: Multi-tenant / marketplace (seller onboarding), internationalization (i18n), multi-currency & tax rules, image CDN + media optimization, role-based granular permissions, SaaS billing if needed. |
-
-Future Candidates: Headless API mode, GraphQL gateway, event sourcing for orders, real-time inventory via WebSockets, AI-assisted sizing or product Q&A.
+Future: Headless API / GraphQL, event sourcing, real-time inventory (WebSockets), AI-assisted sizing & Q&A.
 
 ---
 
