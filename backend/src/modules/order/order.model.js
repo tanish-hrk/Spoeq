@@ -19,7 +19,8 @@ const orderSchema = new mongoose.Schema({
     shipping: { type: Number, default: 0 },
     grandTotal: Number
   },
-  status: { type: String, enum: ['pending','paid','cancelled'], default: 'pending', index: true },
+  // Expanded lifecycle: pending -> paid -> processing -> shipped -> delivered (or -> cancelled/refunded)
+  status: { type: String, enum: ['pending','paid','processing','shipped','delivered','cancelled','refunded'], default: 'pending', index: true },
   payment: {
     method: String,
     gateway: String,

@@ -23,7 +23,7 @@ const refreshSchema = z.object({
 
 function signTokens(user){
   const access = jwt.sign({ sub: user._id, roles: user.roles }, process.env.JWT_ACCESS_SECRET, { expiresIn: process.env.ACCESS_TOKEN_TTL || '15m' });
-  const refresh = jwt.sign({ sub: user._id }, process.env.JWT_REFRESH_SECRET, { expiresIn: process.env.REFRESH_TOKEN_TTL || '7d' });
+  const refresh = jwt.sign({ sub: user._id, ver: Date.now() }, process.env.JWT_REFRESH_SECRET, { expiresIn: process.env.REFRESH_TOKEN_TTL || '7d' });
   return { access, refresh };
 }
 
@@ -33,9 +33,11 @@ router.post('/register', async (req,res,next)=>{
     const exists = await User.findOne({ email: body.email });
     if (exists) return res.status(409).json({ error: 'Email already registered' });
     const hash = await bcrypt.hash(body.password, 12);
-    const user = await User.create({ email: body.email, passwordHash: hash, name: body.name });
-    const tokens = signTokens(user);
-    res.status(201).json({ user: { id: user._id, email: user.email, name: user.name, roles: user.roles }, tokens });
+  const user = await User.create({ email: body.email, passwordHash: hash, name: body.name });
+  const tokens = signTokens(user);
+  user.refreshTokens.push(tokens.refresh);
+  await user.save();
+  res.status(201).json({ user: { id: user._id, email: user.email, name: user.name, roles: user.roles }, tokens });
   } catch(err){ next(err); }
 });
 
@@ -47,28 +49,45 @@ router.post('/login', async (req,res,next)=>{
     const match = await bcrypt.compare(body.password, user.passwordHash);
     if (!match) return res.status(401).json({ error: 'Invalid credentials' });
     if (user.status === 'blocked') return res.status(403).json({ error: 'Account blocked' });
-    const tokens = signTokens(user);
-    res.json({ user: { id: user._id, email: user.email, name: user.name, roles: user.roles }, tokens });
+  const tokens = signTokens(user);
+  // rotate: append new refresh and prune old (limit list length)
+  user.refreshTokens.push(tokens.refresh);
+  if(user.refreshTokens.length > 10) user.refreshTokens = user.refreshTokens.slice(-10);
+  await user.save();
+  res.json({ user: { id: user._id, email: user.email, name: user.name, roles: user.roles }, tokens });
   } catch(err){ next(err); }
 });
 
 router.post('/refresh', async (req,res,next)=>{
   try {
     const body = refreshSchema.parse(req.body);
-    try {
-      const payload = jwt.verify(body.refreshToken, process.env.JWT_REFRESH_SECRET);
-      const user = await User.findById(payload.sub);
-      if(!user) return res.status(401).json({ error: 'Invalid token' });
-      const tokens = signTokens(user);
-      res.json({ tokens });
-    } catch(err){
-      return res.status(401).json({ error: 'Invalid or expired token' });
-    }
+    let payload;
+    try { payload = jwt.verify(body.refreshToken, process.env.JWT_REFRESH_SECRET); } catch(e){ return res.status(401).json({ error: 'Invalid or expired token' }); }
+    const user = await User.findById(payload.sub);
+    if(!user) return res.status(401).json({ error: 'Invalid token' });
+    // ensure provided token is still in allowlist
+    const idx = user.refreshTokens.indexOf(body.refreshToken);
+    if(idx === -1) return res.status(401).json({ error: 'Token revoked' });
+    // rotate: remove old token, add new
+    user.refreshTokens.splice(idx,1);
+    const tokens = signTokens(user);
+    user.refreshTokens.push(tokens.refresh);
+    await user.save();
+    res.json({ tokens });
   } catch(err){ next(err); }
 });
 
-router.post('/logout', (req,res)=>{
-  // Stateless JWT: client just drops tokens. Optionally maintain denylist.
+router.post('/logout', async (req,res)=>{
+  const token = req.body?.refreshToken;
+  if(!token) return res.json({ message: 'Logged out' });
+  try {
+    const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    const user = await User.findById(payload.sub);
+    if(user){
+      user.refreshTokens = user.refreshTokens.filter(t => t !== token);
+      await user.save();
+    }
+  } catch(_){ }
   res.json({ message: 'Logged out' });
 });
 

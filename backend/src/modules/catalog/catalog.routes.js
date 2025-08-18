@@ -2,6 +2,7 @@ const express = require('express');
 const { z } = require('zod');
 const Product = require('./catalog.model');
 const { auth, requireRoles } = require('../../middleware/auth');
+const { get: cacheGet, set: cacheSet, del: cacheDel } = require('../../utils/cache');
 const router = express.Router();
 
 const querySchema = z.object({
@@ -18,6 +19,9 @@ const querySchema = z.object({
 router.get('/', async (req,res,next)=>{
   try {
     const q = querySchema.parse(req.query);
+  const cacheKey = 'products:' + JSON.stringify(q);
+  const cached = await cacheGet(cacheKey);
+  if(cached) return res.json(JSON.parse(cached));
     const page = parseInt(q.page || '1');
     const limit = Math.min(parseInt(q.limit || '20'), 100);
     const filter = {};
@@ -41,7 +45,9 @@ router.get('/', async (req,res,next)=>{
     }
     const total = await Product.countDocuments(filter);
     const items = await findQuery.skip((page-1)*limit).limit(limit).lean();
-    res.json({ page, limit, total, items, totalPages: Math.ceil(total/limit) });
+  const payload = { page, limit, total, items, totalPages: Math.ceil(total/limit) };
+  await cacheSet(cacheKey, JSON.stringify(payload), 60);
+  res.json(payload);
   } catch(err){ next(err); }
 });
 
@@ -65,15 +71,20 @@ router.post('/', auth(true), requireRoles('admin'), async (req,res,next)=>{
     const exists = await Product.findOne({ slug: body.slug });
     if (exists) return res.status(409).json({ error: 'Slug already exists' });
     const product = await Product.create(body);
+  await cacheDel('products:');
     res.status(201).json(product);
   } catch(err){ next(err); }
 });
 
 router.get('/:id', async (req,res,next)=>{
   try {
-    const product = await Product.findById(req.params.id).lean();
+  const cacheKey = 'product:' + req.params.id;
+  const cached = await cacheGet(cacheKey);
+  if(cached) return res.json(JSON.parse(cached));
+  const product = await Product.findById(req.params.id).lean();
     if (!product) return res.status(404).json({ error: 'Not found' });
-    res.json(product);
+  await cacheSet(cacheKey, JSON.stringify(product), 120);
+  res.json(product);
   } catch(err){ next(err); }
 });
 
@@ -87,6 +98,8 @@ router.patch('/:id', auth(true), requireRoles('admin'), async (req,res,next)=>{
     }
     const updated = await Product.findByIdAndUpdate(req.params.id, body, { new: true });
     if(!updated) return res.status(404).json({ error: 'Not found' });
+  await cacheDel('products:');
+  await cacheDel('product:' + req.params.id);
     res.json(updated);
   } catch(err){ next(err); }
 });
@@ -95,6 +108,8 @@ router.delete('/:id', auth(true), requireRoles('admin'), async (req,res,next)=>{
   try {
     const deleted = await Product.findByIdAndDelete(req.params.id);
     if(!deleted) return res.status(404).json({ error: 'Not found' });
+  await cacheDel('products:');
+  await cacheDel('product:' + req.params.id);
     res.json({ message: 'Deleted' });
   } catch(err){ next(err); }
 });

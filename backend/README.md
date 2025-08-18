@@ -66,7 +66,7 @@ docker compose up --build
 ```
 
 ### Next Steps
-- Add cart module
-- Add order/payment flow
-- Add review system
-- Implement caching & rate limiting strategies
+- Redis caching (product list/detail) with invalidation
+- Enhanced rate limiting (auth specific)
+- Coupon, review, payment tests in Jest (mongodb-memory-server)
+- Notification event stub (order.paid, review.created)

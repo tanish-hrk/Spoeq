@@ -9,6 +9,7 @@ const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
+const { initCache } = require('./src/utils/cache');
 
 // Routers
 const productRouter = require('./src/api/product');
@@ -34,6 +35,7 @@ connectDb().catch(err => {
   logger.error('Mongo connect error', err);
   process.exit(1);
 });
+initCache();
 
 // Security / perf middleware
 app.use(helmet());
@@ -42,16 +44,21 @@ app.use(morgan('dev'));
 app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || '*', credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 500 }));
+const globalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 500 });
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50 });
+app.use(globalLimiter);
 
 // Health
-app.get('/health', (req, res) => res.json({ status: 'ok', time: Date.now() }));
+app.get('/health', (req, res) => {
+  const cacheMode = process.env.REDIS_URL ? 'redis' : 'memory';
+  res.json({ status: 'ok', time: Date.now(), cache: cacheMode });
+});
 
 // Legacy mock route (will deprecate)
 app.use('/fetchproduct', productRouter);
 
 // Domain routes
-app.use('/auth', authRouter);
+app.use('/auth', authLimiter, authRouter);
 app.use('/products', catalogRouter);
 app.use('/cart', cartRouter);
 app.use('/orders', orderRouter);

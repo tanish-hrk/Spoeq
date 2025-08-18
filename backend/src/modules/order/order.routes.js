@@ -6,6 +6,8 @@ const Cart = require('../cart/cart.model');
 const Product = require('../catalog/catalog.model');
 const mongoose = require('mongoose');
 const router = express.Router();
+const { emit } = require('../../utils/notify');
+const { requireRoles } = require('../../middleware/auth');
 
 // Draft order from cart
 router.post('/', auth(true), async (req,res,next)=>{
@@ -132,7 +134,8 @@ router.post('/verify', auth(true), async (req,res,next)=>{
       }
       await order.save({ session });
       await session.commitTransaction();
-      return res.json({ success: true, orderId: order._id, transactional: true });
+  emit('order.paid', { orderId: order._id.toString(), userId: order.userId.toString(), total: order.pricing.grandTotal });
+  return res.json({ success: true, orderId: order._id, transactional: true });
     } catch(e){
       if(usedTransaction) { try { await session.abortTransaction(); } catch(_){} }
       // Fallback non-transactional for standalone Mongo (e.g., memory server)
@@ -150,7 +153,8 @@ router.post('/verify', auth(true), async (req,res,next)=>{
           await Coupon.updateOne({ code: order.couponCode }, { $inc: { usageCount: 1 } });
         }
         await order.save();
-        return res.json({ success: true, orderId: order._id, transactional: false });
+  emit('order.paid', { orderId: order._id.toString(), userId: order.userId.toString(), total: order.pricing.grandTotal });
+  return res.json({ success: true, orderId: order._id, transactional: false });
       }
       return res.status(400).json({ error: e.message });
     } finally { if(session) session.endSession(); }
@@ -174,3 +178,45 @@ router.post('/webhook/razorpay', express.raw({ type: 'application/json' }), asyn
 });
 
 module.exports = router;
+
+// --- Admin / user status transitions ---
+// Move paid -> processing -> shipped -> delivered
+router.post('/:id/advance', auth(true), requireRoles('admin'), async (req,res,next)=>{
+  try {
+    const order = await Order.findById(req.params.id);
+    if(!order) return res.status(404).json({ error: 'Not found' });
+    const flow = ['paid','processing','shipped','delivered'];
+    const idx = flow.indexOf(order.status);
+    if(idx === -1 || idx === flow.length-1) return res.status(400).json({ error: 'Cannot advance from current state' });
+    order.status = flow[idx+1];
+    await order.save();
+    res.json(order);
+  } catch(err){ next(err); }
+});
+
+// User cancel before paid OR admin cancel if not shipped
+router.post('/:id/cancel', auth(true), async (req,res,next)=>{
+  try {
+    const order = await Order.findById(req.params.id);
+    if(!order) return res.status(404).json({ error: 'Not found' });
+    const isOwner = order.userId.toString() === req.user.id;
+    if(isOwner && order.status !== 'pending') return res.status(400).json({ error: 'Cannot cancel now' });
+    if(!isOwner && !req.user.roles.includes('admin')) return res.status(403).json({ error: 'Forbidden' });
+    if(!isOwner && req.user.roles.includes('admin') && ['shipped','delivered','refunded'].includes(order.status)) return res.status(400).json({ error: 'Cannot cancel after shipment' });
+    order.status = 'cancelled';
+    await order.save();
+    res.json(order);
+  } catch(err){ next(err); }
+});
+
+// Admin refund (stub; real flow would integrate payment gateway refund API)
+router.post('/:id/refund', auth(true), requireRoles('admin'), async (req,res,next)=>{
+  try {
+    const order = await Order.findById(req.params.id);
+    if(!order) return res.status(404).json({ error: 'Not found' });
+    if(order.status !== 'paid' && order.status !== 'delivered') return res.status(400).json({ error: 'Not refundable' });
+    order.status = 'refunded';
+    await order.save();
+    res.json(order);
+  } catch(err){ next(err); }
+});

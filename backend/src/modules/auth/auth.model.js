@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema({
   status: { type: String, enum: ['active','blocked'], default: 'active' },
   addresses: { type: [addressSchema], default: [] },
   wishlist: { type: [mongoose.Schema.Types.ObjectId], ref: 'Product', default: [] },
+  refreshTokens: { type: [String], default: [] }, // hashed (or raw if short-lived) refresh tokens for rotation
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
