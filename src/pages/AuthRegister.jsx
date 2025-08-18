@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import api from '../lib/api';
+import { useToast } from '../components/ui/ToastProvider';
+import { useEffect } from 'react';
 
 export default function AuthRegister(){
   const [form,setForm]=useState({ email:'', password:'', name:'' });
@@ -15,17 +17,20 @@ export default function AuthRegister(){
     } catch(e){ setError(e.response?.data?.error||e.message); } finally { setLoading(false); }
   }
   function update(k,v){ setForm(f=>({...f,[k]:v})); }
+  const toast = useToast();
+  useEffect(()=> { if(error) toast?.push(error,{ type:'error'}); }, [error, toast]);
   return (
-    <div className='flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white px-4'>
-      <h1 className='text-3xl font-bold mb-6'>Create your vibe ✨</h1>
-      <form onSubmit={submit} className='w-full max-w-sm space-y-4'>
-        <input className='w-full p-3 rounded bg-neutral-800' placeholder='Name' value={form.name} onChange={e=>update('name',e.target.value)} />
-        <input className='w-full p-3 rounded bg-neutral-800' placeholder='Email' type='email' value={form.email} onChange={e=>update('email',e.target.value)} />
-        <input className='w-full p-3 rounded bg-neutral-800' placeholder='Password' type='password' value={form.password} onChange={e=>update('password',e.target.value)} />
-        {error && <div className='text-red-400 text-sm'>{error}</div>}
-        <button disabled={loading} className='w-full py-3 rounded bg-emerald-600 hover:bg-emerald-500 transition disabled:opacity-50'>{loading? 'Creating...' : 'Register'}</button>
-      </form>
-      <p className='mt-6 text-sm text-neutral-400'>Already vibing? <a href='/login' className='text-emerald-400 hover:underline'>Login</a></p>
+    <div className='min-h-screen flex items-center justify-center p-6'>
+      <div className='glass w-full max-w-md rounded-2xl p-8 space-y-6 shadow-glow'>
+        <h1 className='text-3xl font-bold gradient-text'>Create your vibe ✨</h1>
+        <form onSubmit={submit} className='space-y-4'>
+          <input className='field' placeholder='Name' value={form.name} onChange={e=>update('name',e.target.value)} />
+          <input className='field' placeholder='Email' type='email' value={form.email} onChange={e=>update('email',e.target.value)} />
+          <input className='field' placeholder='Password' type='password' value={form.password} onChange={e=>update('password',e.target.value)} />
+          <button disabled={loading} className='btn btn-gradient w-full'>{loading? 'Creating...' : 'Register'}</button>
+        </form>
+        <p className='text-sm text-neutral-400'>Already vibing? <a href='/login' className='text-neon-pink hover:underline'>Login</a></p>
+      </div>
     </div>
   );
 }

@@ -148,4 +148,51 @@ router.delete('/me/addresses/:idx', auth(true), async (req,res,next)=>{
   } catch(err){ next(err); }
 });
 
+// Wishlist
+router.get('/me/wishlist', auth(true), async (req,res,next)=>{
+  try {
+    const user = await User.findById(req.user.id).select('wishlist').lean();
+    res.json(user?.wishlist || []);
+  } catch(err){ next(err); }
+});
+
+// Wishlist populated (batch fetch) to avoid N+1 on client
+router.get('/me/wishlist/populated', auth(true), async (req,res,next)=>{
+  try {
+    const user = await User.findById(req.user.id).select('wishlist').lean();
+    const ids = user?.wishlist || [];
+    if(!ids.length) return res.json([]);
+    const Product = require('../catalog/catalog.model');
+    const products = await Product.find({ _id: { $in: ids } })
+      .select('name price ratingAvg ratingCount stock')
+      .lean();
+    // Preserve original order of wishlist
+    const map = new Map(products.map(p=> [p._id.toString(), p]));
+    const ordered = ids.map(id => map.get(id.toString())).filter(Boolean);
+    res.json(ordered);
+  } catch(err){ next(err); }
+});
+
+router.post('/me/wishlist/:productId', auth(true), async (req,res,next)=>{
+  try {
+    const user = await User.findById(req.user.id);
+    if(!user) return res.status(404).json({ error: 'Not found' });
+    const pid = req.params.productId;
+    if(!user.wishlist.find(id => id.toString() === pid)) user.wishlist.push(pid);
+    await user.save();
+    res.status(201).json(user.wishlist);
+  } catch(err){ next(err); }
+});
+
+router.delete('/me/wishlist/:productId', auth(true), async (req,res,next)=>{
+  try {
+    const user = await User.findById(req.user.id);
+    if(!user) return res.status(404).json({ error: 'Not found' });
+    const pid = req.params.productId;
+    user.wishlist = user.wishlist.filter(id => id.toString() !== pid);
+    await user.save();
+    res.json(user.wishlist);
+  } catch(err){ next(err); }
+});
+
 module.exports = router;

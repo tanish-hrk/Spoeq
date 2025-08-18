@@ -4,12 +4,19 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import "./App.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import LandingPage from "./components/LandingPage";
+import AppShell from './components/layout/AppShell';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import { ToastProvider } from './components/ui/ToastProvider';
 import AuthLogin from './pages/AuthLogin';
 import AuthRegister from './pages/AuthRegister';
 import ProductList from './pages/ProductList';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
+import Wishlist from './pages/Wishlist';
+import Orders from './pages/Orders';
+import OrderDetail from './pages/OrderDetail';
+import Account from './pages/Account';
 import { FitnessCate } from "./components/CategoryPage/FitnessCate";
 import { RunningCate } from "./components/CategoryPage/RunningCate";
 import { TeamSportCate } from "./components/CategoryPage/TeamSportCate";
@@ -21,21 +28,29 @@ function App() {
   return (
     <QueryClientProvider client={qc}>
       <Router>
-        <div className="App bg-neutral-950 min-h-screen text-white font-[system-ui]">
+  <ToastProvider>
+  <AppShell>
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<AuthLogin />} />
             <Route path="/register" element={<AuthRegister />} />
             <Route path="/products" element={<ProductList />} />
             <Route path="/products/:id" element={<ProductDetail />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/wishlist" element={<Wishlist />} />
+            <Route element={<ProtectedRoute />}> 
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/account" element={<Account />} />
+            </Route>
             <Route path="/fitnessCate" element={<FitnessCate />} />
             <Route path="/runningCate" element={<RunningCate />} />
             <Route path="/teamSportsCate" element={<TeamSportCate />} />
             <Route path="/trainingCate" element={<TrainingCate />} />
           </Routes>
-        </div>
+        </AppShell>
+        </ToastProvider>
       </Router>
     </QueryClientProvider>
   );
