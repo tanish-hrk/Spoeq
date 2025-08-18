@@ -1,0 +1,24 @@
+version: '3.9'
+services:
+  app:
+    build: .
+    image: spoeq/app:latest
+    env_file: .env
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+      - redis
+    restart: unless-stopped
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server","--save","","--appendonly","no"]
+    restart: unless-stopped
+  # prometheus (optional) could scrape http://app:5000/metrics/prom
+volumes:
+  mongo_data:

@@ -188,7 +188,9 @@ POST /coupons/apply (cart)   # used indirectly within cart/order flows
 System
 ```
 GET /health
+GET /ready
 GET /metrics
+GET /metrics/prom        # Prometheus text format
 ```
 
 ---
@@ -235,6 +237,22 @@ npm start
 3. Access app via backend host/port.
 
 Suggested (Phase 5): Multi‑stage Dockerfile (builder for frontend, slim runtime for API + static). CI: build + test + push image.
+### CI/CD
+- GitHub Actions workflow `.github/workflows/ci.yml` runs: install, test backend, lint & build frontend, docker build.
+- Extend with push to registry:
+	- Add login step (`docker/login-action@v3`) and `docker push yourrepo/spoeq:tag`.
+	- Optionally add caching layers with `actions/cache` for `~/.npm` and Docker buildx.
+
+### Readiness & Health
+- Liveness: `/health` returns basic status immediately.
+- Readiness: `/ready` returns 503 until Mongo connected (used for orchestrators / load balancers).
+### Observability
+- JSON metrics `/metrics` (internal) & Prometheus scrape `/metrics/prom` (counters & latency histogram).
+- CSP configured (helmet) allowing Razorpay checkout scripts.
+### Production Compose
+```powershell
+docker compose -f docker-compose.prod.yml up --build -d
+```
 
 ---
 

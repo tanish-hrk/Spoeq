@@ -13,7 +13,8 @@ const { initCache } = require('./src/utils/cache');
 const fs = require('fs');
 
 // Metrics (basic counters)
-let metrics = { requests: 0, started: Date.now() };
+let metrics = { requests: 0, started: Date.now(), ready: false, totalLatencyMs: 0 };
+const prom = { counters: { http_requests_total: 0 }, byStatus: {}, hist: [] };
 
 // Routers
 const productRouter = require('./src/api/product');
@@ -34,6 +35,7 @@ async function connectDb() {
   if (!uri) throw new Error('MONGO_URI missing');
   await mongoose.connect(uri, { dbName: uri.split('/').pop() });
   logger.info('MongoDB connected');
+  metrics.ready = true;
 }
 connectDb().catch(err => {
   logger.error('Mongo connect error', err);
@@ -41,11 +43,37 @@ connectDb().catch(err => {
 });
 initCache();
 
-// Security / perf middleware
-app.use(helmet());
+// Security / perf middleware with CSP allowing Razorpay
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'","'unsafe-inline'","https://checkout.razorpay.com"],
+      connectSrc: ["'self'", ...(process.env.CORS_ORIGIN? process.env.CORS_ORIGIN.split(','): ['*'])],
+      imgSrc: ["'self'","data:","blob:"],
+      styleSrc: ["'self'","'unsafe-inline'"],
+      frameSrc: ["'self'","https://api.razorpay.com","https://checkout.razorpay.com"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: []
+    }
+  },
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 app.use(compression());
 app.use(morgan('dev'));
-app.use((req,res,next)=> { metrics.requests++; next(); });
+app.use((req,res,next)=> {
+  metrics.requests++;
+  prom.counters.http_requests_total++;
+  const startHr = process.hrtime.bigint();
+  res.on('finish', ()=> {
+    const durMs = Number((process.hrtime.bigint() - startHr)/1000000n);
+    metrics.totalLatencyMs += durMs;
+    const status = res.statusCode;
+    prom.byStatus[status] = (prom.byStatus[status]||0)+1;
+    if(prom.hist.length < 5000) prom.hist.push(Math.min(durMs,60000));
+  });
+  next();
+});
 app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || '*', credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
@@ -59,9 +87,39 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: Date.now(), cache: cacheMode });
 });
 
+// Readiness (returns 503 until DB ready)
+app.get('/ready', (req,res)=> {
+  if(!metrics.ready) return res.status(503).json({ status:'starting' });
+  res.json({ status:'ready' });
+});
+
 // Metrics endpoint (no auth for now; consider securing)
 app.get('/metrics', (req,res)=> {
   res.json({ ...metrics, uptimeMs: Date.now()-metrics.started, memory: process.memoryUsage() });
+});
+
+// Prometheus metrics (text)
+app.get('/metrics/prom', (req,res)=> {
+  const lines = [];
+  lines.push('# HELP http_requests_total Total HTTP requests');
+  lines.push('# TYPE http_requests_total counter');
+  lines.push(`http_requests_total ${prom.counters.http_requests_total}`);
+  lines.push('# HELP http_requests_status_total HTTP requests by status code');
+  lines.push('# TYPE http_requests_status_total counter');
+  Object.entries(prom.byStatus).forEach(([code,count])=> lines.push(`http_requests_status_total{status="${code}"} ${count}`));
+  const buckets = [50,100,200,300,500,1000,2000,5000,10000,30000,60000];
+  const counts = new Array(buckets.length).fill(0);
+  for(const v of prom.hist){ for(let i=0;i<buckets.length;i++){ if(v <= buckets[i]) { counts[i]++; break; } } }
+  let cumulative = 0;
+  lines.push('# HELP http_request_duration_ms Request duration histogram (ms)');
+  lines.push('# TYPE http_request_duration_ms histogram');
+  buckets.forEach((b,i)=> { cumulative += counts[i]; lines.push(`http_request_duration_ms_bucket{le="${b}"} ${cumulative}`); });
+  lines.push(`http_request_duration_ms_bucket{le="+Inf"} ${prom.hist.length}`);
+  const sum = prom.hist.reduce((a,b)=> a+b,0);
+  lines.push(`http_request_duration_ms_sum ${sum}`);
+  lines.push(`http_request_duration_ms_count ${prom.hist.length}`);
+  res.set('Content-Type','text/plain; version=0.0.4');
+  res.send(lines.join('\n'));
 });
 
 // Basic audit log model + middleware (attach after json parsing)
@@ -114,10 +172,26 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
+let server;
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    logger.info(`API listening on http://localhost:${PORT}`);
-  });
+  server = app.listen(PORT, () => { logger.info(`API listening on http://localhost:${PORT}`); });
 }
+
+function shutdown(signal){
+  return () => {
+    logger.info(`${signal} received: closing server`);
+    if(server){
+      server.close(()=> {
+        logger.info('HTTP server closed');
+        mongoose.connection.close(false).then(()=> {
+          logger.info('Mongo connection closed');
+          process.exit(0);
+        });
+      });
+      setTimeout(()=> { logger.warn('Force exit'); process.exit(1); }, 10000).unref();
+    }
+  };
+}
+['SIGINT','SIGTERM'].forEach(sig=> process.on(sig, shutdown(sig)));
 
 module.exports = app;
