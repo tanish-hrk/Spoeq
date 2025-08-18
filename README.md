@@ -248,25 +248,21 @@ Future: CDN for images, HTTP caching headers, Redis cluster, background pre‑wa
 
 ---
 
-## 🧭 Roadmap (Next Phases)
-- Phase 5: Deployment (Docker, CI/CD, CSP, Prometheus format metrics, graceful shutdown).
-- Phase 6: Advanced personalization (recommendations), analytics dashboards, email/push notifications.
-- Phase 7: Multi‑tenant or marketplace expansion, internationalization, multi‑currency pricing.
+## 🧭 Roadmap (Phase Timeline)
+Status legend: ✅ completed • 🚧 in progress • 🗓 planned
 
----
+| Phase | Status | Focus |
+|-------|--------|-------|
+| 0 | ✅ | Backend foundation: Auth (JWT), products catalog, cart, basic orders, logging, error handling, seeding, Docker scaffold. |
+| 1 | ✅ | Payments & commerce depth: Razorpay intent + verification, coupons, reviews w/ moderation hooks, inventory decrement, extended order model. |
+| 2 | ✅ | Performance & hardening: Redis/in-memory cache abstraction, product + review cache invalidation, rate limiting, notification emitter stub, E2E Jest flows, refresh token rotation groundwork. |
+| 3 | ✅ | Frontend modernization: Gen‑Z UI (Tailwind neon/glass), React Query, Zustand stores, product list/detail, cart & checkout scaffold, wishlist, reviews UI, coupons, filters, skeleton loaders, toasts, unified buttons. |
+| 4 | ✅ | Advanced UX & Admin: Faceted search, suggestions, wishlist batching, account addresses, order timeline & cancel, admin dashboard (orders + actions), product create, hashed refresh tokens, audit sampling, metrics. |
+| 5 | 🗓 | Deployment & Ops: Multi‑stage Docker images, CI/CD workflow, Prometheus-style metrics, readiness probe, graceful shutdown, CSP tightening, log aggregation, env hardening. |
+| 6 | 🗓 | Intelligence & Engagement: Recommendation engine (collaborative + trending), analytics dashboards (sales funnel, cohort retention), email/push notification service, refund webhook handling, customer segmentation. |
+| 7 | 🗓 | Scale & Expansion: Multi-tenant / marketplace (seller onboarding), internationalization (i18n), multi-currency & tax rules, image CDN + media optimization, role-based granular permissions, SaaS billing if needed. |
 
-## 🤝 Contributing
-Fork → branch → PR. Ensure tests pass & follow existing code style (ESLint). Add/adjust unit or integration tests for new public endpoints.
-
----
-
-## 📄 License
-Proprietary (adjust as needed). Add an OSS license here if you intend to open source.
-
----
-
-## 🙋 Support / Questions
-Open an issue or contact the maintainer. Improve docs via PRs.
+Future Candidates: Headless API mode, GraphQL gateway, event sourcing for orders, real-time inventory via WebSockets, AI-assisted sizing or product Q&A.
 
 ---
 
