@@ -45,6 +45,7 @@ export default function AppShell({ children }) {
           {user ? (
             <>
               <Link to="/orders" className={"text-sm font-medium transition "+(active('/orders')? 'text-white':'text-neutral-400 hover:text-white')}>Orders</Link>
+              {user.roles?.includes('admin') && <Link to="/admin" className={"text-sm font-medium transition "+(active('/admin')? 'text-white':'text-neutral-400 hover:text-white')}>Admin</Link>}
               <Link to="/account" className="text-sm font-medium text-neutral-300 hover:text-white">Hi, {user.name?.split(' ')[0]||'you'}</Link>
             </>
           ) : (

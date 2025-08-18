@@ -1,20 +1,28 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api';
 
 const statusSteps = ['pending','paid','processing','shipped','delivered'];
 
 export default function OrderDetail(){
   const { id } = useParams();
+  const qc = useQueryClient();
   const { data: order, isLoading, error } = useQuery({ queryKey: ['order', id], queryFn: async ()=> (await api.get('/orders/'+id)).data });
+  const cancelMutation = useMutation({
+    mutationFn: async ()=> (await api.post(`/orders/${id}/cancel`)).data,
+    onSuccess: (data)=> { qc.setQueryData(['order', id], data); }
+  });
   if(isLoading) return <div className='p-6 text-neutral-400'>Loading...</div>;
   if(error || !order) return <div className='p-6 text-red-400 text-sm'>Order not found.</div>;
   return (
     <div className='p-6 max-w-5xl mx-auto'>
-      <div className='flex items-center justify-between mb-6'>
+      <div className='flex flex-wrap items-center justify-between gap-4 mb-6'>
         <h1 className='text-2xl font-bold gradient-text'>Order #{order._id.slice(-6)}</h1>
-        <div className='text-xs px-2 py-1 rounded bg-neutral-800 border border-neutral-700 uppercase tracking-wide'>{order.status}</div>
+        <div className='flex items-center gap-3'>
+          <div className='text-xs px-2 py-1 rounded bg-neutral-800 border border-neutral-700 uppercase tracking-wide'>{order.status}</div>
+          {order.status==='pending' && <button onClick={()=> cancelMutation.mutate()} disabled={cancelMutation.isLoading} className='text-[11px] px-3 py-1 rounded bg-neutral-900 border border-neutral-700 hover:border-red-500 text-neutral-300 hover:text-red-300 disabled:opacity-50'>Cancel</button>}
+        </div>
       </div>
       <StatusTimeline status={order.status} />
       <div className='mt-8 grid gap-6 md:grid-cols-3'>

@@ -17,6 +17,9 @@ import Wishlist from './pages/Wishlist';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
 import Account from './pages/Account';
+import AdminRoute from './components/auth/AdminRoute';
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminProducts from './pages/admin/Products';
 import { FitnessCate } from "./components/CategoryPage/FitnessCate";
 import { RunningCate } from "./components/CategoryPage/RunningCate";
 import { TeamSportCate } from "./components/CategoryPage/TeamSportCate";
@@ -43,6 +46,10 @@ function App() {
               <Route path="/orders" element={<Orders />} />
               <Route path="/orders/:id" element={<OrderDetail />} />
               <Route path="/account" element={<Account />} />
+            </Route>
+            <Route element={<AdminRoute />}> 
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/products" element={<AdminProducts />} />
             </Route>
             <Route path="/fitnessCate" element={<FitnessCate />} />
             <Route path="/runningCate" element={<RunningCate />} />

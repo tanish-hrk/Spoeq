@@ -2,6 +2,7 @@ const express = require('express');
 const { z } = require('zod');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('./auth.model');
 const router = express.Router();
 const { auth } = require('../../middleware/auth');
@@ -27,6 +28,10 @@ function signTokens(user){
   return { access, refresh };
 }
 
+function hashRefresh(token){
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
 router.post('/register', async (req,res,next)=>{
   try {
     const body = registerSchema.parse(req.body);
@@ -35,7 +40,7 @@ router.post('/register', async (req,res,next)=>{
     const hash = await bcrypt.hash(body.password, 12);
   const user = await User.create({ email: body.email, passwordHash: hash, name: body.name });
   const tokens = signTokens(user);
-  user.refreshTokens.push(tokens.refresh);
+  user.refreshTokens.push(hashRefresh(tokens.refresh));
   await user.save();
   res.status(201).json({ user: { id: user._id, email: user.email, name: user.name, roles: user.roles }, tokens });
   } catch(err){ next(err); }
@@ -51,7 +56,7 @@ router.post('/login', async (req,res,next)=>{
     if (user.status === 'blocked') return res.status(403).json({ error: 'Account blocked' });
   const tokens = signTokens(user);
   // rotate: append new refresh and prune old (limit list length)
-  user.refreshTokens.push(tokens.refresh);
+  user.refreshTokens.push(hashRefresh(tokens.refresh));
   if(user.refreshTokens.length > 10) user.refreshTokens = user.refreshTokens.slice(-10);
   await user.save();
   res.json({ user: { id: user._id, email: user.email, name: user.name, roles: user.roles }, tokens });
@@ -66,12 +71,13 @@ router.post('/refresh', async (req,res,next)=>{
     const user = await User.findById(payload.sub);
     if(!user) return res.status(401).json({ error: 'Invalid token' });
     // ensure provided token is still in allowlist
-    const idx = user.refreshTokens.indexOf(body.refreshToken);
+  const hashed = hashRefresh(body.refreshToken);
+  const idx = user.refreshTokens.indexOf(hashed);
     if(idx === -1) return res.status(401).json({ error: 'Token revoked' });
     // rotate: remove old token, add new
-    user.refreshTokens.splice(idx,1);
+  user.refreshTokens.splice(idx,1);
     const tokens = signTokens(user);
-    user.refreshTokens.push(tokens.refresh);
+  user.refreshTokens.push(hashRefresh(tokens.refresh));
     await user.save();
     res.json({ tokens });
   } catch(err){ next(err); }
@@ -84,7 +90,8 @@ router.post('/logout', async (req,res)=>{
     const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
     const user = await User.findById(payload.sub);
     if(user){
-      user.refreshTokens = user.refreshTokens.filter(t => t !== token);
+  const hashed = hashRefresh(token);
+  user.refreshTokens = user.refreshTokens.filter(t => t !== hashed);
       await user.save();
     }
   } catch(_){ }

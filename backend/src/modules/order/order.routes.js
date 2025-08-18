@@ -59,6 +59,20 @@ router.get('/', auth(true), async (req,res,next)=>{
   } catch(err){ next(err); }
 });
 
+// Admin: list all orders (paginated minimal) & counts
+router.get('/admin/all', auth(true), requireRoles('admin'), async (req,res,next)=>{
+  try {
+    const page = parseInt(req.query.page||'1');
+    const limit = Math.min(parseInt(req.query.limit||'50'), 200);
+    const filter = {};
+    if(req.query.status) filter.status = req.query.status;
+    const total = await Order.countDocuments(filter);
+    const items = await Order.find(filter).sort('-createdAt').skip((page-1)*limit).limit(limit).lean();
+    const statusAgg = await Order.aggregate([{ $group: { _id: '$status', count: { $sum:1 } } }]);
+    res.json({ page, limit, total, totalPages: Math.ceil(total/limit), items, statusCounts: statusAgg });
+  } catch(err){ next(err); }
+});
+
 // Get order by id (own)
 router.get('/:id', auth(true), async (req,res,next)=>{
   try {

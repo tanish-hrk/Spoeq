@@ -10,6 +10,10 @@ const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
 const { initCache } = require('./src/utils/cache');
+const fs = require('fs');
+
+// Metrics (basic counters)
+let metrics = { requests: 0, started: Date.now() };
 
 // Routers
 const productRouter = require('./src/api/product');
@@ -41,6 +45,7 @@ initCache();
 app.use(helmet());
 app.use(compression());
 app.use(morgan('dev'));
+app.use((req,res,next)=> { metrics.requests++; next(); });
 app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || '*', credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
@@ -52,6 +57,35 @@ app.use(globalLimiter);
 app.get('/health', (req, res) => {
   const cacheMode = process.env.REDIS_URL ? 'redis' : 'memory';
   res.json({ status: 'ok', time: Date.now(), cache: cacheMode });
+});
+
+// Metrics endpoint (no auth for now; consider securing)
+app.get('/metrics', (req,res)=> {
+  res.json({ ...metrics, uptimeMs: Date.now()-metrics.started, memory: process.memoryUsage() });
+});
+
+// Basic audit log model + middleware (attach after json parsing)
+const mongooseAudit = new mongoose.Schema({
+  at: { type: Date, default: Date.now },
+  ip: String,
+  userId: String,
+  method: String,
+  path: String,
+  status: Number,
+  ua: String
+});
+let Audit;
+try { Audit = mongoose.model('Audit'); } catch(_) { Audit = mongoose.model('Audit', mongooseAudit); }
+app.use(async (req,res,next)=>{
+  const start = Date.now();
+  res.on('finish', ()=> {
+    // sample only subset to reduce load
+    if(Math.random() < 0.2){
+      const doc = new Audit({ ip: req.ip, userId: req.user?.id, method: req.method, path: req.path, status: res.statusCode, ua: req.headers['user-agent'] });
+      doc.save().catch(()=>{});
+    }
+  });
+  next();
 });
 
 // Legacy mock route (will deprecate)
@@ -72,6 +106,10 @@ app.use(errorHandler);
 
 // Static (production build)
 app.use(express.static(path.join(__dirname, '../dist')));
+// Uploads directory exposure
+const uploadDir = path.join(__dirname, 'uploads');
+if(!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+app.use('/uploads', express.static(uploadDir));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });

@@ -51,6 +51,51 @@ router.get('/', async (req,res,next)=>{
   } catch(err){ next(err); }
 });
 
+// Facets endpoint (categories, brands, price buckets) for current filtered result set (excluding pagination)
+router.get('/facets/all', async (req,res,next)=>{
+  try {
+    const q = querySchema.parse(req.query);
+    const filter = {};
+    if (q.category) filter.categories = q.category;
+    if (q.brand) filter.brand = q.brand;
+    if (q.search) filter.$text = { $search: q.search };
+    if (q.minPrice || q.maxPrice) {
+      filter['price.sale'] = {};
+      if (q.minPrice) filter['price.sale'].$gte = Number(q.minPrice);
+      if (q.maxPrice) filter['price.sale'].$lte = Number(q.maxPrice);
+    }
+    const pipeline = [ { $match: filter } , {
+      $facet: {
+        categories: [ { $unwind: '$categories' }, { $group: { _id: '$categories', count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 30 } ],
+        brands: [ { $match: { brand: { $exists: true, $ne: null } } }, { $group: { _id: '$brand', count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 30 } ],
+        priceStats: [ { $group: { _id: null, min: { $min: '$price.sale' }, max: { $max: '$price.sale' }, avg: { $avg: '$price.sale' } } } ],
+        priceBuckets: [ { $bucket: { groupBy: '$price.sale', boundaries: [0,1000,5000,10000,50000], default: '50000+', output: { count: { $sum:1 } } } } ]
+      }
+    } ];
+    const [facets] = await Product.aggregate(pipeline);
+    res.json({
+      categories: facets.categories.map(c=> ({ value: c._id, count: c.count })),
+      brands: facets.brands.map(b=> ({ value: b._id, count: b.count })),
+      price: facets.priceStats?.[0] || null,
+      buckets: facets.priceBuckets || []
+    });
+  } catch(err){ next(err); }
+});
+
+// Suggest endpoint for quick search suggestions (top 5 by text score)
+router.get('/suggest', async (req,res,next)=>{
+  try {
+    const q = (req.query.q||'').toString().trim();
+    if(!q) return res.json([]);
+    const items = await Product.find({ $text: { $search: q } })
+      .select({ name:1, slug:1, price:1, score: { $meta: 'textScore' } })
+      .sort({ score: { $meta: 'textScore' } })
+      .limit(5)
+      .lean();
+    res.json(items);
+  } catch(err){ next(err); }
+});
+
 const createSchema = z.object({
   name: z.string(),
   slug: z.string(),
