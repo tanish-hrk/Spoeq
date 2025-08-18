@@ -267,16 +267,16 @@ Future: CDN for images, HTTP caching headers, Redis cluster, background pre‑wa
 ---
 
 ## 🧭 Roadmap
-Phase 0: Backend foundation (auth, catalog, cart, basic orders, logging, error handling, seeding, Docker scaffold)
-Phase 1: Payments & commerce depth (Razorpay, coupons, reviews, inventory decrement, extended order model)
-Phase 2: Performance & hardening (cache layer + invalidation, rate limiting, notification stub, E2E tests, refresh rotation groundwork)
-Phase 3: Frontend modernization (Tailwind neon/glass UI, React Query, Zustand, product & cart flows, wishlist, reviews, coupons, filters, skeletons, toasts)
-Phase 4: Advanced UX & Admin (facets & suggestions, wishlist batching, addresses, order timeline & cancel, admin dashboard & product create, hashed refresh tokens, audit sampling, metrics)
-Phase 5: Deployment & Ops (Docker multi-stage, CI/CD, Prometheus metrics, readiness/shutdown, CSP tightening, log aggregation, env hardening)
-Phase 6: Intelligence & Engagement (recommendations, analytics dashboards, notifications, refund webhook handling, segmentation)
-Phase 7: Scale & Expansion (multi-tenant/marketplace, i18n, multi-currency & tax, image CDN, granular permissions, optional SaaS billing)
+- Phase 0: Backend foundation (auth, catalog, cart, basic orders, logging, error handling, seeding, Docker scaffold)
+- Phase 1: Payments & commerce depth (Razorpay, coupons, reviews, inventory decrement, extended order model)
+- Phase 2: Performance & hardening (cache layer + invalidation, rate limiting, notification stub, E2E tests, refresh rotation groundwork)
+- Phase 3: Frontend modernization (Tailwind neon/glass UI, React Query, Zustand, product & cart flows, wishlist, reviews, coupons, filters, skeletons, toasts)
+- Phase 4: Advanced UX & Admin (facets & suggestions, wishlist batching, addresses, order timeline & cancel, admin dashboard & product create, hashed refresh tokens, audit sampling, metrics)
+- Phase 5: Deployment & Ops (Docker multi-stage, CI/CD, Prometheus metrics, readiness/shutdown, CSP tightening, log aggregation, env hardening)
+- Phase 6: Intelligence & Engagement (recommendations, analytics dashboards, notifications, refund webhook handling, segmentation)
+- Phase 7: Scale & Expansion (multi-tenant/marketplace, i18n, multi-currency & tax, image CDN, granular permissions, optional SaaS billing)
 
-Future: Headless API / GraphQL, event sourcing, real-time inventory (WebSockets), AI-assisted sizing & Q&A.
+- Future: Headless API / GraphQL, event sourcing, real-time inventory (WebSockets), AI-assisted sizing & Q&A.
 
 ---
 
