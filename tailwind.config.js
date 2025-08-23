@@ -12,6 +12,15 @@ export default {
           purple: '#8b5cf6',
           cyan: '#22d3ee',
           lime: '#b3ff00'
+        },
+        eco: {
+          leaf: '#2e7d32', // deep green
+          moss: '#43a047', // primary CTA
+          grass: '#81c784', // accents / hovers
+          fern: '#a5d6a7', // subtle backgrounds
+          sand: '#f5f0e6', // light neutral background
+          soil: '#5d4037', // dark brown accent
+          sky: '#e0f7fa'   // light airy highlight
         }
       },
       boxShadow: {
