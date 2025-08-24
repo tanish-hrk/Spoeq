@@ -78,18 +78,18 @@ export default function PrimaryHeader(){
         </div>
       </div>
       {/* Categories strip */}
-      <div className='w-full bg-neutral-950/80 backdrop-blur supports-[backdrop-filter]:bg-neutral-950/70 border-b border-neutral-800'>
+      <div className='w-full bg-eco-fern/50 dark:bg-neutral-950/80 backdrop-blur supports-[backdrop-filter]:bg-eco-fern/40 dark:supports-[backdrop-filter]:bg-neutral-950/70 border-b border-eco-grass/40 dark:border-neutral-800'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6'>
           <div className='flex items-center h-11 gap-6 overflow-x-auto scrollbar-thin'>
             {categories.map(c=> {
               const active = loc.pathname.startsWith('/products') && (new URLSearchParams(loc.search).get('q')||'') === c.key;
               return (
-                <button key={c.key} onClick={()=> navigate('/products?q='+c.key)} className={'text-[12px] font-medium tracking-wide whitespace-nowrap transition px-2 py-1 rounded '+ (active? 'bg-eco-grass/30 text-white border border-eco-grass/40':'text-neutral-400 hover:text-white hover:bg-neutral-800')}>{c.label}</button>
+                <button key={c.key} onClick={()=> navigate('/products?q='+c.key)} className={'text-[12px] font-medium tracking-wide whitespace-nowrap transition px-2 py-1 rounded '+ (active? 'bg-eco-grass/30 text-neutral-900 dark:text-white border border-eco-grass/40':'text-neutral-700 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-800')}>{c.label}</button>
               );
             })}
             <div className='ml-auto hidden sm:flex items-center gap-3 pr-1'>
-              <Link to='/wishlist' className='text-[12px] text-neutral-400 hover:text-white'>Wishlist</Link>
-              <Link to='/orders' className='text-[12px] text-neutral-400 hover:text-white'>Orders</Link>
+              <Link to='/wishlist' className='text-[12px] text-neutral-700 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'>Wishlist</Link>
+              <Link to='/orders' className='text-[12px] text-neutral-700 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'>Orders</Link>
             </div>
           </div>
         </div>
