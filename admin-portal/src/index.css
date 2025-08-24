@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+html, body, #root { height: 100%; }
+
+body { @apply text-gray-800 dark:text-gray-100; }
+
+/***** Reusable *****/
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.card { @apply bg-white/70 dark:bg-white/5 backdrop-blur border border-black/5 dark:border-white/10 rounded-xl; }
+.header { @apply bg-gradient-to-br from-emerald-600 via-green-600 to-emerald-700 text-white; }
+.badge { @apply inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium border-emerald-200 text-emerald-700 bg-emerald-50; }
+
+.btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 font-medium shadow-sm; }
+.btn-primary { @apply bg-emerald-600 hover:bg-emerald-700 text-white; }
+.btn-outline { @apply border border-emerald-200 text-emerald-700 hover:bg-emerald-50; }
+
+input[type="text"], input[type="email"], input[type="password"], select, textarea {
+  @apply w-full rounded-lg border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/40;
+}

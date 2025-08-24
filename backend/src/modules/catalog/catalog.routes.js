@@ -1,7 +1,7 @@
 const express = require('express');
 const { z } = require('zod');
 const Product = require('./catalog.model');
-const { auth, requireRoles } = require('../../middleware/auth');
+const { auth, requireRoles, requireAdminOrAccess } = require('../../middleware/auth');
 const { get: cacheGet, set: cacheSet, del: cacheDel } = require('../../utils/cache');
 const router = express.Router();
 
@@ -110,7 +110,7 @@ const createSchema = z.object({
   tags: z.array(z.string()).optional()
 });
 
-router.post('/', auth(true), requireRoles('admin'), async (req,res,next)=>{
+router.post('/', auth(true), requireAdminOrAccess('products'), async (req,res,next)=>{
   try {
     const body = createSchema.parse(req.body);
     const exists = await Product.findOne({ slug: body.slug });
@@ -134,7 +134,7 @@ router.get('/:id', async (req,res,next)=>{
 });
 
 const updateSchema = createSchema.partial();
-router.patch('/:id', auth(true), requireRoles('admin'), async (req,res,next)=>{
+router.patch('/:id', auth(true), requireAdminOrAccess('products'), async (req,res,next)=>{
   try {
     const body = updateSchema.parse(req.body);
     if (body.slug) {
@@ -149,7 +149,7 @@ router.patch('/:id', auth(true), requireRoles('admin'), async (req,res,next)=>{
   } catch(err){ next(err); }
 });
 
-router.delete('/:id', auth(true), requireRoles('admin'), async (req,res,next)=>{
+router.delete('/:id', auth(true), requireAdminOrAccess('products'), async (req,res,next)=>{
   try {
     const deleted = await Product.findByIdAndDelete(req.params.id);
     if(!deleted) return res.status(404).json({ error: 'Not found' });

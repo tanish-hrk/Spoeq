@@ -1,4 +1,3 @@
-import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import "./App.css";
@@ -48,8 +47,9 @@ function App() {
               <Route path="/account" element={<Account />} />
             </Route>
             <Route element={<AdminRoute />}> 
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/products" element={<AdminProducts />} />
+              {/* Legacy admin pages (kept temporarily) */}
+              <Route path="/admin-legacy" element={<AdminDashboard />} />
+              <Route path="/admin-legacy/products" element={<AdminProducts />} />
             </Route>
             <Route path="/fitnessCate" element={<FitnessCate />} />
             <Route path="/runningCate" element={<RunningCate />} />

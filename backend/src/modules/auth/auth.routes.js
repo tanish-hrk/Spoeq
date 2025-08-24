@@ -21,9 +21,26 @@ const loginSchema = z.object({
 const refreshSchema = z.object({
   refreshToken: z.string().min(10)
 });
+// Admin: update another user's role and access (owner only)
+const accessSchema = z.object({
+  role: z.enum(['owner','admin','manager','support','editor','analyst','customer']).optional(),
+  access: z.object({
+    products: z.boolean().optional(),
+    categories: z.boolean().optional(),
+    inventory: z.boolean().optional(),
+    orders: z.boolean().optional(),
+    coupons: z.boolean().optional(),
+    promotions: z.boolean().optional(),
+    reviews: z.boolean().optional(),
+    customers: z.boolean().optional(),
+    content: z.boolean().optional(),
+    analytics: z.boolean().optional(),
+    settings: z.boolean().optional()
+  }).optional()
+});
 
 function signTokens(user){
-  const access = jwt.sign({ sub: user._id, roles: user.roles }, process.env.JWT_ACCESS_SECRET, { expiresIn: process.env.ACCESS_TOKEN_TTL || '15m' });
+  const access = jwt.sign({ sub: user._id, roles: user.roles, role: user.role }, process.env.JWT_ACCESS_SECRET, { expiresIn: process.env.ACCESS_TOKEN_TTL || '15m' });
   const refresh = jwt.sign({ sub: user._id, ver: Date.now() }, process.env.JWT_REFRESH_SECRET, { expiresIn: process.env.REFRESH_TOKEN_TTL || '7d' });
   return { access, refresh };
 }
@@ -42,7 +59,7 @@ router.post('/register', async (req,res,next)=>{
   const tokens = signTokens(user);
   user.refreshTokens.push(hashRefresh(tokens.refresh));
   await user.save();
-  res.status(201).json({ user: { id: user._id, email: user.email, name: user.name, roles: user.roles }, tokens });
+  res.status(201).json({ user: { id: user._id, email: user.email, name: user.name, roles: user.roles, role: user.role, access: user.access }, tokens });
   } catch(err){ next(err); }
 });
 
@@ -59,7 +76,7 @@ router.post('/login', async (req,res,next)=>{
   user.refreshTokens.push(hashRefresh(tokens.refresh));
   if(user.refreshTokens.length > 10) user.refreshTokens = user.refreshTokens.slice(-10);
   await user.save();
-  res.json({ user: { id: user._id, email: user.email, name: user.name, roles: user.roles }, tokens });
+  res.json({ user: { id: user._id, email: user.email, name: user.name, roles: user.roles, role: user.role, access: user.access }, tokens });
   } catch(err){ next(err); }
 });
 
@@ -98,12 +115,29 @@ router.post('/logout', async (req,res)=>{
   res.json({ message: 'Logged out' });
 });
 
+// Owner-only: manage user role/access
+router.patch('/admin/users/:id/access', auth(true), async (req,res,next)=>{
+  try {
+    // gate: only owners may modify roles/access
+    if(!(req.user?.roles||[]).includes('owner')) return res.status(403).json({ error: 'Forbidden' });
+    const body = accessSchema.parse(req.body);
+    const user = await User.findById(req.params.id);
+    if(!user) return res.status(404).json({ error: 'Not found' });
+    if(body.role) user.role = body.role;
+    if(body.access) user.access = { ...(user.access||{}), ...body.access };
+    // ensure roles array includes primary role
+    if(user.role && Array.isArray(user.roles) && !user.roles.includes(user.role)) user.roles.push(user.role);
+    await user.save();
+    res.json({ id: user._id, email: user.email, name: user.name, roles: user.roles, role: user.role, access: user.access });
+  } catch(err){ next(err); }
+});
+
 // Profile (basic)
 router.get('/me', auth(true), async (req,res,next)=>{
   try {
     const user = await User.findById(req.user.id).lean();
     if(!user) return res.status(404).json({ error: 'Not found' });
-    res.json({ id: user._id, email: user.email, name: user.name, roles: user.roles, addresses: user.addresses });
+  res.json({ id: user._id, email: user.email, name: user.name, roles: user.roles, role: user.role, access: user.access, addresses: user.addresses });
   } catch(err){ next(err); }
 });
 
