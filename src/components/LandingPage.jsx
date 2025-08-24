@@ -1,6 +1,8 @@
-import React from 'react';
+/* eslint-disable react/prop-types */
 import { Link, useNavigate } from 'react-router-dom';
-import { mockFeaturedProducts, mockCategorySpotlight, mockTestimonials, mockBadges } from '../lib/mockProducts';
+import { mockTestimonials } from '../lib/mockProducts';
+import CategoryRail from './rails/CategoryRail';
+import ProductRail from './rails/ProductRail';
 
 // Re-imagined eco-friendly landing page using Tailwind (replaces mixed Bootstrap styles)
 
@@ -12,23 +14,7 @@ const GradientTitle = ({ children, className='' }) => (
   <h2 className={'text-3xl md:text-4xl font-black tracking-tight mb-8 bg-gradient-to-r from-eco-leaf via-eco-moss to-eco-grass bg-clip-text text-transparent '+className}>{children}</h2>
 );
 
-const ProductCard = ({ p }) => {
-  return (
-    <Link to={'/products/'+p.id} className='group relative flex flex-col rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-900/60 hover:bg-neutral-900 transition shadow-glow/0 hover:shadow-glow'>
-      {p.badge && <span className={'absolute top-3 left-3 text-[10px] px-2 py-1 rounded-full font-semibold tracking-wide '+ (mockBadges[p.badge]||'bg-neutral-800 text-white')}>{p.badge}</span>}
-      <div className='aspect-square flex items-center justify-center text-neutral-600 text-xs bg-neutral-800/60'>IMG</div>
-      <div className='p-4 flex flex-col flex-1'>
-        <div className='text-[11px] uppercase tracking-wider text-eco-fern mb-1'>{p.brand}</div>
-        <div className='font-semibold text-neutral-100 group-hover:text-white line-clamp-2 mb-2'>{p.name}</div>
-        <div className='mt-auto flex items-baseline gap-2'>
-          <span className='text-lg font-bold text-eco-grass'>₹{p.price.sale}</span>
-          {p.price.mrp && <span className='text-xs line-through text-neutral-500'>₹{p.price.mrp}</span>}
-        </div>
-        <div className='text-[10px] text-amber-400 mt-1'>★ {p.rating} <span className='text-neutral-500'>({p.ratingCount})</span></div>
-      </div>
-    </Link>
-  );
-};
+// product card removed (using ProductRail items instead)
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -63,39 +49,7 @@ const Stat = ({ number, label }) => (
   </div>
 );
 
-const CategoriesSpotlight = () => (
-  <Section id='spotlights' className='bg-gradient-to-b from-neutral-950 via-neutral-900 to-neutral-950'>
-    <div className='max-w-6xl mx-auto px-6'>
-      <GradientTitle>Performance Ecosystems</GradientTitle>
-      <div className='grid md:grid-cols-3 gap-6'>
-        {mockCategorySpotlight.map(c=> (
-          <div key={c.key} className='relative rounded-2xl overflow-hidden border border-neutral-800 group'>
-            <div className={'absolute inset-0 bg-gradient-to-br '+c.gradient+' pointer-events-none'}></div>
-            <div className='p-6 relative flex flex-col min-h-[220px]'>
-              <h3 className='font-semibold text-lg text-neutral-100 mb-2'>{c.title}</h3>
-              <p className='text-sm text-neutral-400 leading-relaxed'>{c.blurb}</p>
-              <Link to={'/products?q='+c.key} className='mt-auto text-[11px] tracking-wide font-semibold text-eco-grass group-hover:underline'>Explore →</Link>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </Section>
-);
-
-const FeaturedProducts = () => (
-  <Section id='featured'>
-    <div className='max-w-6xl mx-auto px-6'>
-      <div className='flex items-center justify-between mb-4'>
-        <GradientTitle className='mb-0'>Featured Gear</GradientTitle>
-        <Link to='/products' className='text-xs text-eco-grass hover:underline'>View all</Link>
-      </div>
-      <div className='grid gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4'>
-        {mockFeaturedProducts.map(p=> <ProductCard key={p.id} p={p} />)}
-      </div>
-    </div>
-  </Section>
-);
+// removed deprecated sections in favor of Flipkart-like rails
 
 const Testimonials = () => (
   <Section id='voices' className='bg-neutral-950/70'>
@@ -131,8 +85,17 @@ function LandingPage(){
   return (
     <div className='relative'>
       <Hero />
-      <FeaturedProducts />
-      <CategoriesSpotlight />
+      {/* Flipkart-like category strip */}
+      <CategoryRail />
+      {/* Promo cards row (placeholder) */}
+      <section className='max-w-7xl mx-auto px-4 sm:px-6 my-6 grid grid-cols-1 md:grid-cols-3 gap-4'>
+        <div className='h-36 rounded-xl bg-gradient-to-r from-eco-fern to-eco-grass border border-eco-grass/30'></div>
+        <div className='h-36 rounded-xl bg-gradient-to-r from-eco-grass to-eco-moss border border-eco-grass/30'></div>
+        <div className='h-36 rounded-xl bg-gradient-to-r from-eco-leaf to-eco-fern border border-eco-grass/30'></div>
+      </section>
+      {/* Product rails */}
+      <ProductRail title='Top Rated' query={{ limit: 12, sort: '-ratingAvg' }} />
+      <ProductRail title='New Arrivals' query={{ limit: 12, sort: '-createdAt' }} />
       <Testimonials />
       <CTA />
     </div>
