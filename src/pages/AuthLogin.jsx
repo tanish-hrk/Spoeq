@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../lib/api';
 import { useAuthStore } from '../lib/store';
 import { useToast } from '../components/ui/ToastProvider';
-import { useEffect } from 'react';
 
 export default function AuthLogin(){
   const setUser = useAuthStore(s=>s.setUser);

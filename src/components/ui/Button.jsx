@@ -1,4 +1,3 @@
-import React from 'react';
 import clsx from 'clsx';
 
 const base = 'btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-pink/70 disabled:opacity-50 disabled:cursor-not-allowed';

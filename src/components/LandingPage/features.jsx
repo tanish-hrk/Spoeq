@@ -1,4 +1,3 @@
-import React from 'react';
 import { Check, Medal, Users, Truck, Headphones } from 'lucide-react';
 
 const StatsItem = ({ value, label }) => (

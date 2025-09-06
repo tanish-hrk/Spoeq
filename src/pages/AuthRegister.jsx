@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../lib/api';
 import { useToast } from '../components/ui/ToastProvider';
-import { useEffect } from 'react';
 
 export default function AuthRegister(){
   const [form,setForm]=useState({ email:'', password:'', name:'' });

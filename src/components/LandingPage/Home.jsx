@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import babyImage from "../../assets/photo-1522778526097-ce0a22ceb253.avif";
 import axios from 'axios';
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Star, Shield, Zap, Flame, Crown, Diamond, ArrowRight, Info, Check, Cog, Heart } from 'lucide-react';
 
 const BrandCard = ({ icon: Icon, name }) => (
