@@ -159,7 +159,9 @@ router.post('/verify', auth(true), async (req,res,next)=>{
   emit('order.paid', { orderId: order._id.toString(), userId: order.userId.toString(), total: order.pricing.grandTotal });
   return res.json({ success: true, orderId: order._id, transactional: true });
     } catch(e){
-      if(usedTransaction) { try { await session.abortTransaction(); } catch(_){} }
+      if(usedTransaction) { try { await session.abortTransaction(); } catch {
+        // Ignore abort errors
+      } }
       // Fallback non-transactional for standalone Mongo (e.g., memory server)
       if(e.message && e.message.includes('Transaction numbers are only allowed')) {
         for (const item of order.items) {

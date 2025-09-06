@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '../lib/store';
 import api from '../lib/api';
 import { Link } from 'react-router-dom';
@@ -17,7 +17,7 @@ export default function Wishlist(){
       try {
         const res = await api.get('/auth/me/wishlist/populated');
         if(!cancelled) { setItems(res.data); setLoading(false); }
-      } catch(_){ if(!cancelled){ setItems([]); setLoading(false); } }
+      } catch { if(!cancelled){ setItems([]); setLoading(false); } }
     }
     load();
     return ()=> { cancelled = true; };

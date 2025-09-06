@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+ 
 import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
 

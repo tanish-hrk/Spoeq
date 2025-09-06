@@ -1,7 +1,7 @@
 const express = require('express');
 const { z } = require('zod');
 const Product = require('./catalog.model');
-const { auth, requireRoles, requireAdminOrAccess } = require('../../middleware/auth');
+const { auth, requireAdminOrAccess } = require('../../middleware/auth');
 const { get: cacheGet, set: cacheSet, del: cacheDel } = require('../../utils/cache');
 const router = express.Router();
 

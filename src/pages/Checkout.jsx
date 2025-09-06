@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import api from '../lib/api';
 import { loadRazorpay } from '../lib/loadRazorpay';
 
@@ -29,7 +29,7 @@ export default function Checkout(){
         order_id: payment.razorpayOrderId,
         handler: async function (resp){
           try {
-            const verifyRes = await api.post('/orders/verify', {
+            await api.post('/orders/verify', {
               orderId: order._id,
               razorpay_order_id: resp.razorpay_order_id,
               razorpay_payment_id: resp.razorpay_payment_id,

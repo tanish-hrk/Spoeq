@@ -12,7 +12,7 @@ export const useAuthStore = create((set,get) => ({
   logout: () => { localStorage.clear(); set({ user: null, wishlist: [] }); window.location.href='/'; }
 }));
 
-export const useCartStore = create((set,get)=>({
+export const useCartStore = create((set)=>({
   items: [],
   coupon: null,
   setCart: (cart)=> set({ items: cart?.items||[], coupon: cart?.couponCode||null }),

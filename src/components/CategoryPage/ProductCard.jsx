@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, Button } from 'react-bootstrap';
 import { Star, StarFill, Heart } from 'react-bootstrap-icons';
 

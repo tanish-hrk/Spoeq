@@ -156,9 +156,8 @@ const mongooseAudit = new mongoose.Schema({
   ua: String
 });
 let Audit;
-try { Audit = mongoose.model('Audit'); } catch(_) { Audit = mongoose.model('Audit', mongooseAudit); }
+try { Audit = mongoose.model('Audit'); } catch { Audit = mongoose.model('Audit', mongooseAudit); }
 app.use(async (req,res,next)=>{
-  const start = Date.now();
   res.on('finish', ()=> {
     // sample only subset to reduce load
     if(Math.random() < 0.2){

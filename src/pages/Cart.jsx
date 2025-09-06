@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCartStore } from '../lib/store';
 import api from '../lib/api';
 
 export default function Cart(){
-  const { items, setCart, coupon } = useCartStore(s=>({ items: s.items, setCart: s.setCart, coupon: s.coupon }));
+  const { items, setCart } = useCartStore(s=>({ items: s.items, setCart: s.setCart }));
   const [couponCode,setCouponCode]=useState('');
   const [discount,setDiscount]=useState(0);
   const [applying,setApplying]=useState(false);

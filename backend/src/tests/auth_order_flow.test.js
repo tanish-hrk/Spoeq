@@ -14,7 +14,6 @@ describe('Auth -> Product -> Cart -> Order -> Payment flow', () => {
 		const email = 'admin@test.com';
 		const password = 'Pass12345';
 		await request(app).post('/auth/register').send({ email, password, name: 'Admin User' });
-		const mongoose = require('mongoose');
 		const User = require('../modules/auth/auth.model');
 		await User.updateOne({ email }, { roles: ['admin'] });
 		const loginRes = await request(app).post('/auth/login').send({ email, password });
@@ -62,7 +61,7 @@ describe('Auth -> Product -> Cart -> Order -> Payment flow', () => {
 			.set('Authorization', 'Bearer ' + token)
 			.send({ orderId, razorpay_order_id: intentRes.body.razorpayOrderId, razorpay_payment_id: 'pay_123', razorpay_signature: generatedSignature });
 			if(verifyRes.status !== 200) {
-				// eslint-disable-next-line no-console
+				 
 				console.log('Verify failure body:', verifyRes.body);
 			}
 			expect(verifyRes.status).toBe(200);

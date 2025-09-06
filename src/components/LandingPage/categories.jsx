@@ -1,4 +1,3 @@
-import React from 'react';
 import img2 from '../../assets/pexels-rupinder-singh-2744173-11091136.jpg';
 import img1 from '../../assets/pexels-photo-1552252.webp';
 import img3 from '../../assets/pexels-photo-2468339.webp';
@@ -64,7 +63,7 @@ const FeaturedCategories = () => (
     <h1 className="display-4 mb-4">Featured Categories</h1>
     <p className="lead mb-5">Discover our premium sports equipment collection</p>
     <div className="row gx-4 gy-4 justify-content-center">
-      {categories.map((category, index) => (
+      {categories.map((category) => (
         <div key={category.name} className="col-12 col-md-6 col-lg-3">
           <CategoryCard {...category} />
         </div>

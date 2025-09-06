@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+ 
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuthStore, useCartStore } from '../../lib/store';

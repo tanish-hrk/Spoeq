@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+ 
 import { Link, useNavigate } from 'react-router-dom';
 import { mockTestimonials } from '../lib/mockProducts';
 import CategoryRail from './rails/CategoryRail';

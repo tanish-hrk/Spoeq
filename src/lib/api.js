@@ -20,7 +20,7 @@ instance.interceptors.response.use(r=>r, async err => {
       const res = await instance.post('/auth/refresh', { refreshToken });
       localStorage.setItem('accessToken', res.data.tokens.access);
       return instance(original);
-    } catch(e){
+    } catch {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       window.location.href = '/login';

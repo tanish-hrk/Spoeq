@@ -84,7 +84,7 @@ router.post('/refresh', async (req,res,next)=>{
   try {
     const body = refreshSchema.parse(req.body);
     let payload;
-    try { payload = jwt.verify(body.refreshToken, process.env.JWT_REFRESH_SECRET); } catch(e){ return res.status(401).json({ error: 'Invalid or expired token' }); }
+    try { payload = jwt.verify(body.refreshToken, process.env.JWT_REFRESH_SECRET); } catch{ return res.status(401).json({ error: 'Invalid or expired token' }); }
     const user = await User.findById(payload.sub);
     if(!user) return res.status(401).json({ error: 'Invalid token' });
     // ensure provided token is still in allowlist
@@ -111,7 +111,9 @@ router.post('/logout', async (req,res)=>{
   user.refreshTokens = user.refreshTokens.filter(t => t !== hashed);
       await user.save();
     }
-  } catch(_){ }
+  } catch { 
+    // Ignore errors during logout cleanup
+  }
   res.json({ message: 'Logged out' });
 });
 
