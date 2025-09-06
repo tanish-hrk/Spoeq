@@ -115,6 +115,24 @@ router.post('/logout', async (req,res)=>{
   res.json({ message: 'Logged out' });
 });
 
+// Admin list users (basic)
+router.get('/admin/users', auth(true), async (req,res,next)=>{
+  try {
+    const roles = req.user?.roles||[];
+    if(!(roles.includes('owner') || roles.includes('admin'))) return res.status(403).json({ error: 'Forbidden' });
+    if(req.query.id){
+      const u = await User.findById(req.query.id).select('email name role roles status access').lean();
+      const items = u ? [u] : [];
+      return res.json({ page:1, limit:1, total: items.length, totalPages: 1, items });
+    }
+    const page = parseInt(req.query.page||'1');
+    const limit = Math.min(parseInt(req.query.limit||'25'), 100);
+    const total = await User.countDocuments();
+    const items = await User.find({}).sort('-createdAt').skip((page-1)*limit).limit(limit).select('email name role roles status').lean();
+    res.json({ page, limit, total, totalPages: Math.ceil(total/limit), items });
+  } catch(err){ next(err); }
+});
+
 // Owner-only: manage user role/access
 router.patch('/admin/users/:id/access', auth(true), async (req,res,next)=>{
   try {

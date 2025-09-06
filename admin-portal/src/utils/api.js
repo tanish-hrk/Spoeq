@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE || 'http://localhost:5000',
+  baseURL: import.meta.env.VITE_API_BASE || 'https://spoeq-server.vercel.app',
   withCredentials: false,
 })
 
@@ -22,7 +22,7 @@ api.interceptors.response.use(r=>r, async (err) => {
       localStorage.setItem('adm-token', data.tokens.access)
       localStorage.setItem('adm-refresh', data.tokens.refresh)
       return api(original)
-  } catch {
+    } catch {
       localStorage.removeItem('adm-token')
       localStorage.removeItem('adm-refresh')
       if (typeof window !== 'undefined') window.location.href = '/login'

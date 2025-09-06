@@ -1,7 +1,7 @@
 const express = require('express');
 const { z } = require('zod');
 const Coupon = require('./coupon.model');
-const { auth, requireRoles } = require('../../middleware/auth');
+const { auth, requireAdminOrAccess } = require('../../middleware/auth');
 const router = express.Router();
 
 const baseSchema = z.object({
@@ -15,7 +15,7 @@ const baseSchema = z.object({
   active: z.boolean().optional()
 });
 
-router.post('/', auth(true), requireRoles('admin'), async (req,res,next)=>{
+router.post('/', auth(true), requireAdminOrAccess('coupons'), async (req,res,next)=>{
   try {
     const data = baseSchema.parse(req.body);
     const exists = await Coupon.findOne({ code: data.code });
@@ -25,11 +25,11 @@ router.post('/', auth(true), requireRoles('admin'), async (req,res,next)=>{
   } catch(err){ next(err); }
 });
 
-router.get('/', auth(true), requireRoles('admin'), async (req,res,next)=>{
+router.get('/', auth(true), requireAdminOrAccess('coupons'), async (req,res,next)=>{
   try { const list = await Coupon.find().sort('-createdAt').lean(); res.json(list); } catch(err){ next(err); }
 });
 
-router.patch('/:id', auth(true), requireRoles('admin'), async (req,res,next)=>{
+router.patch('/:id', auth(true), requireAdminOrAccess('coupons'), async (req,res,next)=>{
   try {
     const data = baseSchema.partial().parse(req.body);
     if(data.code){
@@ -42,7 +42,7 @@ router.patch('/:id', auth(true), requireRoles('admin'), async (req,res,next)=>{
   } catch(err){ next(err); }
 });
 
-router.delete('/:id', auth(true), requireRoles('admin'), async (req,res,next)=>{
+router.delete('/:id', auth(true), requireAdminOrAccess('coupons'), async (req,res,next)=>{
   try { const deleted = await Coupon.findByIdAndDelete(req.params.id); if(!deleted) return res.status(404).json({ error: 'Not found' }); res.json({ message: 'Deleted' }); } catch(err){ next(err); }
 });
 

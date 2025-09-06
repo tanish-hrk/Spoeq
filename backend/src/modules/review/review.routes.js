@@ -1,6 +1,6 @@
 const express = require('express');
 const { z } = require('zod');
-const { auth, requireRoles } = require('../../middleware/auth');
+const { auth, requireAdminOrAccess } = require('../../middleware/auth');
 const Review = require('./review.model');
 const Order = require('../order/order.model');
 const { emit } = require('../../utils/notify');
@@ -31,9 +31,18 @@ router.get('/product/:productId', async (req,res,next)=>{
   } catch(err){ next(err); }
 });
 
+// Admin: list reviews by status
+router.get('/admin', auth(true), requireAdminOrAccess('reviews'), async (req,res,next)=>{
+  try {
+    const status = req.query.status || 'pending';
+    const items = await Review.find({ status }).sort('-createdAt').limit(200).lean();
+    res.json(items);
+  } catch(err){ next(err); }
+});
+
 // Moderate (approve/reject)
 const modSchema = z.object({ status: z.enum(['approved','rejected']) });
-router.patch('/:id/status', auth(true), requireRoles('admin'), async (req,res,next)=>{
+router.patch('/:id/status', auth(true), requireAdminOrAccess('reviews'), async (req,res,next)=>{
   try {
     const { status } = modSchema.parse(req.body);
     const review = await Review.findByIdAndUpdate(req.params.id, { status }, { new: true });

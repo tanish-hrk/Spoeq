@@ -1,12 +1,15 @@
-import { Outlet, NavLink, useLocation, Navigate } from 'react-router-dom'
+import { Outlet, NavLink, useLocation, Navigate, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, LineChart, Package, ShoppingCart, LogOut, Sun, Moon } from 'lucide-react'
+import { Menu, LineChart, Package, ShoppingCart, LogOut, Sun, Moon, TicketPercent, Users, MessageSquare, Settings as Cog } from 'lucide-react'
+import { useMe, hasAccess } from '../utils/auth'
 
 export default function Root() {
   const [open, setOpen] = useState(true)
   const [dark, setDark] = useState(false)
   const loc = useLocation()
+  const navigate = useNavigate()
+  const { data: me } = useMe()
   const authed = typeof window !== 'undefined' && !!localStorage.getItem('adm-token')
 
   useEffect(() => {
@@ -32,12 +35,13 @@ export default function Root() {
             <Menu size={18}/>
           </button>
           <span className="font-semibold tracking-wide">Spoeq Admin</span>
+          <span className="ml-2 text-xs text-white/80">{me?.name} ({me?.role || me?.roles?.[0]})</span>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={toggleDark} className="btn btn-outline text-white/90 border-white/25">
             {dark ? <Sun size={16}/> : <Moon size={16}/>} <span className="hidden sm:inline">Theme</span>
           </button>
-          <button className="btn btn-outline text-white/90 border-white/25">
+          <button className="btn btn-outline text-white/90 border-white/25" onClick={()=>{ localStorage.removeItem('adm-token'); localStorage.removeItem('adm-refresh'); navigate('/login', { replace: true }); }}>
             <LogOut size={16}/> <span className="hidden sm:inline">Logout</span>
           </button>
         </div>
@@ -54,8 +58,14 @@ export default function Root() {
           >
             <nav className="space-y-1">
               <SideLink to="/" icon={<LineChart size={18}/>} label="Dashboard"/>
-              <SideLink to="/products" icon={<Package size={18}/> } label="Products"/>
-              <SideLink to="/orders" icon={<ShoppingCart size={18}/> } label="Orders"/>
+              {hasAccess(me,'products') && <SideLink to="/products" icon={<Package size={18}/> } label="Products"/>}
+              {hasAccess(me,'products') && <SideLink to="/inventory" icon={<Package size={18}/> } label="Inventory"/>}
+              {hasAccess(me,'products') && <SideLink to="/categories" icon={<Package size={18}/> } label="Categories"/>}
+              {hasAccess(me,'orders') && <SideLink to="/orders" icon={<ShoppingCart size={18}/> } label="Orders"/>}
+              {hasAccess(me,'coupons') && <SideLink to="/coupons" icon={<TicketPercent size={18}/> } label="Coupons"/>}
+              {hasAccess(me,'customers') && <SideLink to="/customers" icon={<Users size={18}/> } label="Customers"/>}
+              {hasAccess(me,'reviews') && <SideLink to="/reviews" icon={<MessageSquare size={18}/> } label="Reviews"/>}
+              {hasAccess(me,'settings') && <SideLink to="/access" icon={<Cog size={18}/> } label="Access"/>}
             </nav>
           </motion.aside>
         )}

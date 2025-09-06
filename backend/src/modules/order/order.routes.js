@@ -1,13 +1,12 @@
 const express = require('express');
 const { z } = require('zod');
-const { auth } = require('../../middleware/auth');
+const { auth, requireAdminOrAccess } = require('../../middleware/auth');
 const Order = require('./order.model');
 const Cart = require('../cart/cart.model');
 const Product = require('../catalog/catalog.model');
 const mongoose = require('mongoose');
 const router = express.Router();
 const { emit } = require('../../utils/notify');
-const { requireRoles } = require('../../middleware/auth');
 
 // Draft order from cart
 router.post('/', auth(true), async (req,res,next)=>{
@@ -60,7 +59,7 @@ router.get('/', auth(true), async (req,res,next)=>{
 });
 
 // Admin: list all orders (paginated minimal) & counts
-router.get('/admin/all', auth(true), requireRoles('admin'), async (req,res,next)=>{
+router.get('/admin/all', auth(true), requireAdminOrAccess('orders'), async (req,res,next)=>{
   try {
     const page = parseInt(req.query.page||'1');
     const limit = Math.min(parseInt(req.query.limit||'50'), 200);
@@ -77,6 +76,15 @@ router.get('/admin/all', auth(true), requireRoles('admin'), async (req,res,next)
 router.get('/:id', auth(true), async (req,res,next)=>{
   try {
     const order = await Order.findOne({ _id: req.params.id, userId: req.user.id }).lean();
+    if(!order) return res.status(404).json({ error: 'Not found' });
+    res.json(order);
+  } catch(err){ next(err); }
+});
+
+// Admin: get order by id
+router.get('/admin/:id', auth(true), requireAdminOrAccess('orders'), async (req,res,next)=>{
+  try {
+    const order = await Order.findById(req.params.id).lean();
     if(!order) return res.status(404).json({ error: 'Not found' });
     res.json(order);
   } catch(err){ next(err); }
@@ -195,7 +203,7 @@ module.exports = router;
 
 // --- Admin / user status transitions ---
 // Move paid -> processing -> shipped -> delivered
-router.post('/:id/advance', auth(true), requireRoles('admin'), async (req,res,next)=>{
+router.post('/:id/advance', auth(true), requireAdminOrAccess('orders'), async (req,res,next)=>{
   try {
     const order = await Order.findById(req.params.id);
     if(!order) return res.status(404).json({ error: 'Not found' });
@@ -224,7 +232,7 @@ router.post('/:id/cancel', auth(true), async (req,res,next)=>{
 });
 
 // Admin refund (stub; real flow would integrate payment gateway refund API)
-router.post('/:id/refund', auth(true), requireRoles('admin'), async (req,res,next)=>{
+router.post('/:id/refund', auth(true), requireAdminOrAccess('orders'), async (req,res,next)=>{
   try {
     const order = await Order.findById(req.params.id);
     if(!order) return res.status(404).json({ error: 'Not found' });
